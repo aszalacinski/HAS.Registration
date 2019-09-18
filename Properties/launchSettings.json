@@ -12,13 +12,17 @@
       "commandName": "IISExpress",
       "launchBrowser": true,
       "environmentVariables": {
+        "SENDGRID_KEY": "HAS.Registration.v1",
+        "SENDGRID_USER": "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",
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "HAS.Registration": {
+    "SelfHost": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
+        "SENDGRID_KEY": "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",
+        "SENDGRID_USER": "HAS.Registration.v1",
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "applicationUrl": "https://localhost:5001;http://localhost:5000"
@@ -28,6 +32,8 @@
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
       "environmentVariables": {
+        "SENDGRID_KEY": "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",
+        "SENDGRID_USER": "HAS.Registration.v1",
         "ASPNETCORE_URLS": "https://+:443;http://+:80",
         "ASPNETCORE_HTTPS_PORT": "44348"
       },

@@ -1,8 +1,10 @@
 ﻿using HAS.Registration.Configuration;
+using HAS.Registration.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.MongoDb;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,15 +25,28 @@ namespace HAS.Registration
                    .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true);
 
             builder.AddEnvironmentVariables();
-            Configuration = configuration;
+            Configuration = builder.Build();
         }
 
         public IConfiguration Configuration { get; }
+        public IHostingEnvironment Environment { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<CloudSettings>(Configuration.GetSection("CloudSettings"));
+            
+            services.AddIdentity<IdentityUser>(config =>
+            {
+                config.Lockout.MaxFailedAccessAttempts = 5;
+                config.Lockout.AllowedForNewUsers = true;
+                config.Lockout.DefaultLockoutTimeSpan = new TimeSpan(0, 5, 0);
+
+                config.SignIn.RequireConfirmedEmail = true;
+            })
+                .AddDefaultTokenProviders();
+
+
             services.AddSingleton<IUserStore<IdentityUser>>(provider =>
             {
                 var options = provider.GetService<IOptions<CloudSettings>>();
@@ -41,17 +56,8 @@ namespace HAS.Registration
                 return UserStore<IdentityUser>.CreateAsync(database).GetAwaiter().GetResult();
             });
 
-            services.AddIdentity<IdentityUser>()
-                .AddDefaultTokenProviders();
-
-            //services.Configure<CookiePolicyOptions>(options =>
-            //{
-            //    // This lambda determines whether user consent for non-essential cookies is needed for a given request.
-            //    options.CheckConsentNeeded = context => true;
-            //    options.MinimumSameSitePolicy = SameSiteMode.None;
-            //});
-
-
+            services.AddTransient<IEmailSender, SendGridEmailSender>();
+            
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
