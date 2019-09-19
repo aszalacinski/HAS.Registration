@@ -11,13 +11,9 @@ namespace HAS.Registration.Services
 {
     public class SendGridEmailSender : IEmailSender
     {
-        public SendGridEmailSender()
+        public SendGridEmailSender(AuthMessageSenderOptions options)
         {
-            Options = new AuthMessageSenderOptions
-            {
-                SendGridKey = System.Environment.GetEnvironmentVariable("SENDGRID_KEY"),
-                SendGridUser = System.Environment.GetEnvironmentVariable("SENDGRID_USER")
-            };
+            Options = options;
         }
 
         public AuthMessageSenderOptions Options { get; }

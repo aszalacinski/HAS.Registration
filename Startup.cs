@@ -34,8 +34,20 @@ namespace HAS.Registration
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.Configure<CloudSettings>(Configuration.GetSection("CloudSettings"));
-            
+            var dbconn_myp = Configuration.GetSection("DBCONNECTIONSTRING_MONGODB_MPY").Value;
+
+            services.AddSingleton(new CloudSettings
+            {
+                DBConnectionString_MongoDB = Configuration.GetSection("DBCONNECTIONSTRING_MONGODB_IDENTITY").Value,
+                DBConnectionString_MongoDB_DatabaseName = Configuration["CloudSettings:DBConnectionString_MongoDB_DatabaseName"]
+            });
+
+            services.AddSingleton(new AuthMessageSenderOptions
+            {
+                SendGridKey = Configuration.GetSection("SENDGRID_KEY").Value,
+                SendGridUser = Configuration.GetSection("SENDGRID_USER").Value
+            });
+
             services.AddIdentity<IdentityUser>(config =>
             {
                 config.Lockout.MaxFailedAccessAttempts = 5;
@@ -49,9 +61,9 @@ namespace HAS.Registration
 
             services.AddSingleton<IUserStore<IdentityUser>>(provider =>
             {
-                var options = provider.GetService<IOptions<CloudSettings>>();
-                var client = new MongoClient(options.Value.DBConnectionString_MongoDB);
-                var database = client.GetDatabase(options.Value.DBConnectionString_MongoDB_DatabaseName);
+                var options = provider.GetService<CloudSettings>();
+                var client = new MongoClient(options.DBConnectionString_MongoDB);
+                var database = client.GetDatabase(options.DBConnectionString_MongoDB_DatabaseName);
 
                 return UserStore<IdentityUser>.CreateAsync(database).GetAwaiter().GetResult();
             });
