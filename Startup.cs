@@ -56,6 +56,13 @@ namespace HAS.Registration
                 config.Lockout.DefaultLockoutTimeSpan = new TimeSpan(0, 5, 0);
 
                 config.SignIn.RequireConfirmedEmail = true;
+
+                config.User.RequireUniqueEmail = true;
+
+                config.Password.RequiredLength = 6;
+                config.Password.RequireDigit = true;
+                config.Password.RequireUppercase = true;
+                config.Password.RequireNonAlphanumeric = true;
             })
                 .AddDefaultTokenProviders();
 

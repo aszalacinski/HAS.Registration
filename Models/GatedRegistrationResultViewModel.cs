@@ -16,7 +16,7 @@ namespace HAS.Registration.Models
             switch (code)
             {
                 case 204:
-                    Message = "Thanks for registering. Please login at <a href=\"https://www.mypractice.yoga\">MyPractice.Yoga</a>.";
+                    Message = "You have already registered. Please login at <a href=\"https://www.mypractice.yoga\">MyPractice.Yoga</a>.";
                     break;
 
                 case 200:
