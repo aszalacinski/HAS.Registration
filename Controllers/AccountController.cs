@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using HAS.Registration.Models;
 using System.Text.Encodings.Web;
 using Microsoft.Extensions.Logging;
+using HAS.Registration.Feature.GatedRegistration;
 
 namespace HAS.Registration.Controllers
 {
@@ -18,12 +19,18 @@ namespace HAS.Registration.Controllers
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IEmailSender _emailSender;
         private readonly ILogger<AccountController> _logger;
+        private readonly IGatedRegistrationService _gatedRegistrationService;
 
-        public AccountController(UserManager<IdentityUser> userManager, IEmailSender emailSender, ILogger<AccountController> logger)
+        public AccountController(
+            UserManager<IdentityUser> userManager, 
+            IEmailSender emailSender, 
+            ILogger<AccountController> logger,
+            IGatedRegistrationService gatedRegistrationSvc)
         {
             _userManager = userManager;
             _emailSender = emailSender;
             _logger = logger;
+            _gatedRegistrationService = gatedRegistrationSvc;
         }
 
 
@@ -40,29 +47,62 @@ namespace HAS.Registration.Controllers
             ViewData["ReturnUrl"] = returnUrl = returnUrl ?? Url.Content("~/");
             if (ModelState.IsValid)
             {
-                var user = new IdentityUser(model.Email, model.Email);
-                var result = await _userManager.CreateAsync(user, model.Password);
-                if (result.Succeeded)
+                // check if user is registed with GatedRegistration
+                var registerCheck = await _gatedRegistrationService.AttemptToRegister(model.Email, model.EntryCode);
+                var regCheckResult = registerCheck.Result.Result;
+                if(regCheckResult)
                 {
-                    _logger.LogInformation("User created a new account with password.");
+                    var user = new IdentityUser(model.Email, model.Email);
+                    var result = await _userManager.CreateAsync(user, model.Password);
+                    if (result.Succeeded)
+                    {
+                        _logger.LogInformation("User created a new account with password.");
 
-                    // Send an email with this link
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                        // Send an email with this link
+                        var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
-                    var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, Request.Scheme);
+                        var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, Request.Scheme);
 
-                    await _emailSender.SendEmailAsync(model.Email, "MyPractice.Yoga Email Confirmation",
-                        "Please confirm your MyPractice.Yoga account by clicking this link: <a href=\"" + callbackUrl + "\">link</a>");
+                        await _emailSender.SendEmailAsync(model.Email, "MyPractice.Yoga Email Confirmation",
+                            "Please confirm your MyPractice.Yoga account by clicking this link: <a href=\"" + callbackUrl + "\">link</a>");
 
-                    //await _signInManager.SignInAsync(user, isPersistent: false);
+                        //await _signInManager.SignInAsync(user, isPersistent: false);
 
-                    return View("Registered");
+                        return View("Registered");
+                    }
+                    AddErrors(result);
                 }
-                AddErrors(result);
+                else
+                {
+                    switch(registerCheck.Result.StatusCode)
+                    {
+                        case 200:
+                            return RedirectToAction("GatedRegistrationResult", "Account", new { code = 200 });
+
+                        case 204:
+                            return RedirectToAction("GatedRegistrationResult", "Account", new { code = 204 });
+
+                        case 302:
+                            return RedirectToAction("GatedRegistrationResult", "Account", new { code = 302 });
+
+                        case 401:
+                            return RedirectToAction("GatedRegistrationResult", "Account", new { code = 401 });
+
+                        default:
+                            return RedirectToAction("GatedRegistrationResult", "Account", new { code = 500 });
+
+                    }
+                }
             }
        
             // If we got this far, something failed, redisplay form
             return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult GatedRegistrationResult(int code)
+        {
+            return View(new GatedRegistrationResultViewModel(code));
         }
 
         [HttpGet]

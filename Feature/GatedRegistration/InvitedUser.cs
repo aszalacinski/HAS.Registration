@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace HAS.Registration.Feature.GatedRegistration
 {
@@ -14,7 +15,7 @@ namespace HAS.Registration.Feature.GatedRegistration
 
         private InvitedUser() { }
 
-        public InvitedUser(string id, string emailAddress, string entryCode, bool isRegistered, bool isInvited, DateTime dateRegistered)
+        public InvitedUser(string id, string emailAddress, string entryCode, bool isRegistered, bool isInvited, DateTime dateRegistered, IEnumerable<InvitedUserLogEntry> logs)
             : base(id)
         {
             EmailAddress = emailAddress;
@@ -22,11 +23,12 @@ namespace HAS.Registration.Feature.GatedRegistration
             Registered = isRegistered;
             Invited = isInvited;
             DateRegistered = dateRegistered;
+            RegistrationLog = logs.ToList() ?? new List<InvitedUserLogEntry>();
         }
 
         public bool IsRegistered() => Registered;
 
-        public bool Register() => Registered = true;
+        public bool Register() => SetAsRegistered();
 
         public bool IsInvited() => Invited;
 
@@ -36,7 +38,15 @@ namespace HAS.Registration.Feature.GatedRegistration
 
         public IEnumerable<InvitedUserLogEntry> Logs => RegistrationLog;
 
-        public void Log(bool registrationAttempt, string entryCode = null) => RegistrationLog.Add(new InvitedUserLogEntry(entryCode ?? EntryCode, EmailAddress, DateTime.UtcNow, registrationAttempt));
+        public void Log(bool registrationAttempt, int resultCode, string entryCode = null) => RegistrationLog.Add(new InvitedUserLogEntry(entryCode ?? EntryCode, EmailAddress, DateTime.UtcNow, registrationAttempt, resultCode));
+
+        private bool SetAsRegistered()
+        {
+            Registered = true;
+            DateRegistered = DateTime.UtcNow;
+
+            return true;
+        }
 
         public InvitedUserSnapshot AsSnapshot()
         {
@@ -52,9 +62,9 @@ namespace HAS.Registration.Feature.GatedRegistration
             };
         }
 
-        public static InvitedUser Create(string id, string emailAddress, string entryCode, bool isRegistered, bool isInvited, DateTime dateRegistered)
+        public static InvitedUser Create(string id, string emailAddress, string entryCode, bool isRegistered, bool isInvited, DateTime dateRegistered, IEnumerable<InvitedUserLogEntry> logs)
         {
-            return new InvitedUser(id, emailAddress, entryCode, isRegistered, isInvited, dateRegistered);
+            return new InvitedUser(id, emailAddress, entryCode, isRegistered, isInvited, dateRegistered, logs);
         }
     }
 
@@ -71,6 +81,6 @@ namespace HAS.Registration.Feature.GatedRegistration
 
     public static class InvitedUserExtensions
     {
-        public static InvitedUser ToEntity(this InvitedUserSnapshot snapshot) => InvitedUser.Create(snapshot.Id, snapshot.EmailAddress, snapshot.EntryCode, snapshot.Registered, snapshot.Invited, snapshot.DateRegistered);
+        public static InvitedUser ToEntity(this InvitedUserSnapshot snapshot) => InvitedUser.Create(snapshot.Id, snapshot.EmailAddress, snapshot.EntryCode, snapshot.Registered, snapshot.Invited, snapshot.DateRegistered, snapshot.Logs.ToValueObjects());
     }
 }

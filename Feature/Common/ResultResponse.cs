@@ -13,8 +13,8 @@ namespace HAS.Registration.Feature
             StatusCode = statusCode;
         }
 
-        T Result { get; set; }
-        int StatusCode { get; set; }
+        public T Result { get; set; }
+        public int StatusCode { get; set; }
 
         public static ResultResponse<T> Create(T result, int statusCode) => new ResultResponse<T>(result, statusCode);
     }

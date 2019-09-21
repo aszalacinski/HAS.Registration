@@ -33,6 +33,13 @@
                 </div>
             </div>
             <div class="form-group">
+                <label asp-for="EntryCode" class="col-md-4 control-label"></label>
+                <div class="col-md-10">
+                    <input asp-for="EntryCode" class="form-control" />
+                    <span asp-validation-for="EntryCode" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group">
                 <div class="col-md-offset-4 col-md-10">
                     <button type="submit" class="btn btn-primary">Register</button>
                 </div>

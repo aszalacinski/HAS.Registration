@@ -1,4 +1,5 @@
 ﻿using HAS.Registration.Configuration;
+using HAS.Registration.Feature.GatedRegistration;
 using HAS.Registration.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -69,7 +70,9 @@ namespace HAS.Registration
             });
 
             services.AddTransient<IEmailSender, SendGridEmailSender>();
-            
+
+            services.AddGatedRegstration();
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 

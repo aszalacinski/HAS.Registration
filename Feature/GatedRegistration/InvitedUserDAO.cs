@@ -21,22 +21,22 @@ namespace HAS.Registration.Feature.GatedRegistration
         [BsonElement("isReg")]
         public bool Registered { get; set; }
 
-        [BsonElement("invit")]
+        [BsonElement("isInv")]
         public bool Invited { get; set; }
 
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
-        [BsonElement("dcreated")]
+        [BsonElement("dregd")]
         public DateTime DateRegistered { get; set; }
 
         [BsonElement("logs")]
-        public List<InvitedUserLogEntryDAO> Logs { get; set; }
+        public IEnumerable<InvitedUserLogEntryDAO> Logs { get; set; }
     }
 
     public static class InvitedUserDAOExensions
     {
-        public static InvitedUser ToEntity(this InvitedUserDAO dao) => InvitedUser.Create(dao.Id.ToString(), dao.EmailAddress, dao.EntryCode, dao.Registered, dao.Invited, dao.DateRegistered);
+        public static InvitedUser ToEntity(this InvitedUserDAO dao) => InvitedUser.Create(dao.Id.ToString(), dao.EmailAddress, dao.EntryCode, dao.Registered, dao.Invited, dao.DateRegistered, dao.Logs.ToValueObject());
 
-        public static InvitedUserDAO ToDAO(this InvitedUserSnapshot snapshot) => new InvitedUserDAO { Id = snapshot.Id.Equals(string.Empty) ? ObjectId.Empty : ObjectId.Parse(snapshot.Id), EmailAddress = snapshot.EmailAddress, EntryCode = snapshot.EntryCode, Registered = snapshot.Registered, Invited = snapshot.Invited, DateRegistered = snapshot.DateRegistered };
+        public static InvitedUserDAO ToDAO(this InvitedUserSnapshot snapshot) => new InvitedUserDAO { Id = snapshot.Id.Equals(string.Empty) ? ObjectId.Empty : ObjectId.Parse(snapshot.Id), EmailAddress = snapshot.EmailAddress, EntryCode = snapshot.EntryCode, Registered = snapshot.Registered, Invited = snapshot.Invited, DateRegistered = snapshot.DateRegistered, Logs = snapshot.Logs.ToDAO() };
 
         public static InvitedUserDAO ToDAO(this InvitedUser invitedUser) => invitedUser.AsSnapshot().ToDAO();
 

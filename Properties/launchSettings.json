@@ -22,6 +22,7 @@
     "SelfHost": {
       "commandName": "Project",
       "launchBrowser": true,
+      "launchUrl": "Account/Register",
       "environmentVariables": {
         "SENDGRID_KEY": "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",
         "DBCONNECTIONSTRING_MONGODB_IDENTITY": "mongodb://host.docker.internal:27017/?connect=standalone",

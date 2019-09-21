@@ -20,13 +20,15 @@ namespace HAS.Registration.Feature.GatedRegistration
 
         [BsonElement("success")]
         public bool Success { get; set; }
+        [BsonElement("rcode")]
+        public int ResultCode { get; set; }
     }
 
     public static class InvitedUserLogEntryDAOExtensions
     {
         public static InvitedUserLogEntry ToValueObject(this InvitedUserLogEntryDAO dao)
         {
-            return InvitedUserLogEntry.Create(dao.EntryCode, dao.EmailAddress, dao.AttemptDate, dao.Success);
+            return InvitedUserLogEntry.Create(dao.EntryCode, dao.EmailAddress, dao.AttemptDate, dao.Success, dao.ResultCode);
         }
 
         public static InvitedUserLogEntryDAO ToDAO(this InvitedUserLogEntrySnapshot snapshot)
@@ -36,7 +38,8 @@ namespace HAS.Registration.Feature.GatedRegistration
                 EntryCode = snapshot.EntryCode,
                 EmailAddress = snapshot.EmailAddress,
                 AttemptDate = snapshot.AttemptDate,
-                Success = snapshot.Success
+                Success = snapshot.Success,
+                ResultCode = snapshot.ResultCode
             };
         }
 
