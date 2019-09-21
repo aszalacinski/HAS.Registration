@@ -3,8 +3,8 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:49371",
-      "sslPort": 44347
+      "applicationUrl": "http://localhost:5100",
+      "sslPort": 5100
     }
   },
   "profiles": {
@@ -30,7 +30,7 @@
         "SENDGRID_USER": "HAS.Registration.v1",
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "https://localhost:5001;http://localhost:5000"
+      "applicationUrl": "https://localhost:5101;http://localhost:5100"
     },
     "Docker": {
       "commandName": "Docker",
@@ -42,11 +42,11 @@
         "DBCONNECTIONSTRING_MONGODB_MPY": "mongodb://host.docker.internal:27017/?connect=standalone",
         "SENDGRID_USER": "HAS.Registration.v1",
         "ASPNETCORE_URLS": "https://+:443;http://+:80",
-        "ASPNETCORE_HTTPS_PORT": "44348"
+        "ASPNETCORE_HTTPS_PORT": "5100"
       },
-      "httpPort": 49374,
+      "httpPort": 5100,
       "useSSL": true,
-      "sslPort": 44348
+      "sslPort": 5100
     }
   }
 }
