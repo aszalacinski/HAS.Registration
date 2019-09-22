@@ -1,6 +1,6 @@
-﻿using HAS.Registration.Configuration;
+﻿using HAS.Registration.ApplicationServices.SendGrid;
+using HAS.Registration.Configuration;
 using HAS.Registration.Feature.GatedRegistration;
-using HAS.Registration.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using System;
 using IdentityUser = Microsoft.AspNetCore.Identity.MongoDb.IdentityUser;
@@ -23,9 +22,14 @@ namespace HAS.Registration
             var builder = new ConfigurationBuilder()
                    .SetBasePath(env.ContentRootPath)
                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                   .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true);
+                   .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
+                   .AddEnvironmentVariables();
 
-            builder.AddEnvironmentVariables();
+            if(env.IsDevelopment())
+            {
+                builder.AddUserSecrets<Startup>();
+            }
+
             Configuration = builder.Build();
         }
 
@@ -35,18 +39,17 @@ namespace HAS.Registration
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var dbconn_myp = Configuration.GetSection("DBCONNECTIONSTRING_MONGODB_MPY").Value;
-
             services.AddSingleton(new CloudSettings
             {
-                DBConnectionString_MongoDB = Configuration.GetSection("DBCONNECTIONSTRING_MONGODB_IDENTITY").Value,
-                DBConnectionString_MongoDB_DatabaseName = Configuration["CloudSettings:DBConnectionString_MongoDB_DatabaseName"]
+                DBConnectionString_MongoDB = Configuration.GetSection("MongoDB:Identity:ConnectionString").Value,
+                DBConnectionString_MongoDB_DatabaseName = Configuration.GetSection("MongoDB:Identity:DatabaseName").Value
             });
 
             services.AddSingleton(new AuthMessageSenderOptions
             {
-                SendGridKey = Configuration.GetSection("SENDGRID_KEY").Value,
-                SendGridUser = Configuration.GetSection("SENDGRID_USER").Value
+
+                SendGridKey = Configuration.GetSection("SendGrid:Key").Value,
+                SendGridUser = Configuration.GetSection("SendGrid:User").Value
             });
 
             services.AddIdentity<IdentityUser>(config =>

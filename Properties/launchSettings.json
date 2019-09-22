@@ -12,10 +12,6 @@
       "commandName": "IISExpress",
       "launchBrowser": true,
       "environmentVariables": {
-        "SENDGRID_KEY": "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",
-        "DBCONNECTIONSTRING_MONGODB_IDENTITY": "mongodb://host.docker.internal:27017/?connect=standalone",
-        "DBCONNECTIONSTRING_MONGODB_MPY": "mongodb://host.docker.internal:27017/?connect=standalone",
-        "SENDGRID_USER": "HAS.Registration.v1",
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
@@ -24,10 +20,6 @@
       "launchBrowser": true,
       "launchUrl": "Account/Register",
       "environmentVariables": {
-        "SENDGRID_KEY": "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",
-        "DBCONNECTIONSTRING_MONGODB_IDENTITY": "mongodb://host.docker.internal:27017/?connect=standalone",
-        "DBCONNECTIONSTRING_MONGODB_MPY": "mongodb://host.docker.internal:27017/?connect=standalone",
-        "SENDGRID_USER": "HAS.Registration.v1",
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "applicationUrl": "https://localhost:5101;http://localhost:5100"
@@ -37,10 +29,6 @@
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
       "environmentVariables": {
-        "SENDGRID_KEY": "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",
-        "DBCONNECTIONSTRING_MONGODB_IDENTITY": "mongodb://host.docker.internal:27017/?connect=standalone",
-        "DBCONNECTIONSTRING_MONGODB_MPY": "mongodb://host.docker.internal:27017/?connect=standalone",
-        "SENDGRID_USER": "HAS.Registration.v1",
         "ASPNETCORE_URLS": "https://+:443;http://+:80",
         "ASPNETCORE_HTTPS_PORT": "5100"
       },

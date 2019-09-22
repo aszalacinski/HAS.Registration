@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace HAS.Registration.Services
+namespace HAS.Registration.ApplicationServices.SendGrid
 {
     public class SendGridEmailSender : IEmailSender
     {
@@ -17,7 +17,6 @@ namespace HAS.Registration.Services
         }
 
         public AuthMessageSenderOptions Options { get; }
-
 
         public Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
