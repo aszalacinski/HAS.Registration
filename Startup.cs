@@ -42,12 +42,13 @@ namespace HAS.Registration
             services.AddSingleton(new CloudSettings
             {
                 DBConnectionString_MongoDB = Configuration.GetSection("MongoDB:Identity:ConnectionString").Value,
-                DBConnectionString_MongoDB_DatabaseName = Configuration.GetSection("MongoDB:Identity:DatabaseName").Value
+                DBConnectionString_MongoDB_DatabaseName = Configuration.GetSection("MongoDB:Identity:DatabaseName").Value,
+                Azure_Queue_ConnectionString = Configuration.GetSection("Azure:Storage:ConnectionString").Value,
+                Azure_Queue_Name_ReservationCompletedEvent = Configuration.GetSection("Azure:Storage:Queue:Name:RegistrationEvent").Value
             });
 
             services.AddSingleton(new AuthMessageSenderOptions
             {
-
                 SendGridKey = Configuration.GetSection("SendGrid:Key").Value,
                 SendGridUser = Configuration.GetSection("SendGrid:User").Value
             });

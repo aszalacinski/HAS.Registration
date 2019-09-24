@@ -9,5 +9,8 @@ namespace HAS.Registration.Configuration
     {
         public string DBConnectionString_MongoDB { get; set; }
         public string DBConnectionString_MongoDB_DatabaseName { get; set; }
+
+        public string Azure_Queue_ConnectionString { get; set; }
+        public string Azure_Queue_Name_ReservationCompletedEvent { get; set; }
     }
 }

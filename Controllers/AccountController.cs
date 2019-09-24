@@ -11,6 +11,8 @@ using HAS.Registration.Models;
 using System.Text.Encodings.Web;
 using Microsoft.Extensions.Logging;
 using HAS.Registration.Feature.GatedRegistration;
+using HAS.Registration.ApplicationServices.Messaging;
+using HAS.Registration.Configuration;
 
 namespace HAS.Registration.Controllers
 {
@@ -20,17 +22,21 @@ namespace HAS.Registration.Controllers
         private readonly IEmailSender _emailSender;
         private readonly ILogger<AccountController> _logger;
         private readonly IGatedRegistrationService _gatedRegistrationService;
+        private readonly IQueueService _queueService;
 
         public AccountController(
             UserManager<IdentityUser> userManager, 
             IEmailSender emailSender, 
             ILogger<AccountController> logger,
-            IGatedRegistrationService gatedRegistrationSvc)
+            IGatedRegistrationService gatedRegistrationSvc,
+            CloudSettings cloudSettings)
         {
             _userManager = userManager;
             _emailSender = emailSender;
             _logger = logger;
             _gatedRegistrationService = gatedRegistrationSvc;
+            _queueService = AzureStorageQueueService.Create(cloudSettings.Azure_Queue_ConnectionString);
+            _queueService.CreateQueue(cloudSettings.Azure_Queue_Name_ReservationCompletedEvent);
         }
 
 
@@ -67,6 +73,8 @@ namespace HAS.Registration.Controllers
                             "Please confirm your MyPractice.Yoga account by clicking this link: <a href=\"" + callbackUrl + "\">link</a>");
 
                         //await _signInManager.SignInAsync(user, isPersistent: false);
+
+                        await _queueService.AddMessage<RegistrationCompletedEvent>(new RegistrationCompletedEvent { Email = user.Email.Value, UserId = user.Id });
 
                         return View("Registered");
                     }

@@ -12,6 +12,8 @@
   <ItemGroup>
     <PackageReference Include="HAS.AspNet.Identity.MongoDb" Version="1.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="11.0.1" />
+    <PackageReference Include="Microsoft.Azure.Storage.Queue" Version="11.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="2.2.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.7.12" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.3" />
