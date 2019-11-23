@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace HAS.Registration.ApplicationServices.MongoDb
+namespace HAS.Registration.Data
 {
     public class DbContext
     {

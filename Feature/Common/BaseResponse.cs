@@ -14,7 +14,7 @@ namespace HAS.Registration.Feature
         {
             Result = result;
         }
-
+        
         public BaseResponse(bool hasErrors, string errorMessage)
             : base(hasErrors, errorMessage)
         {

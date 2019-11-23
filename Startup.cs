@@ -1,6 +1,8 @@
-﻿using HAS.Registration.ApplicationServices.SendGrid;
-using HAS.Registration.Configuration;
+﻿using AutoMapper;
+using HAS.Registration.ApplicationServices.SendGrid;
+using HAS.Registration.Data;
 using HAS.Registration.Feature.GatedRegistration;
+using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -9,6 +11,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
 using System;
 using IdentityUser = Microsoft.AspNetCore.Identity.MongoDb.IdentityUser;
@@ -17,35 +20,24 @@ namespace HAS.Registration
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env, IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
-            var builder = new ConfigurationBuilder()
-                   .SetBasePath(env.ContentRootPath)
-                   .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                   .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
-                   .AddEnvironmentVariables();
+            Configuration = configuration;
 
-            if(env.IsDevelopment())
-            {
-                builder.AddUserSecrets<Startup>();
-            }
+            var testConfig = Configuration["MPY:Other"];
 
-            Configuration = builder.Build();
+            Environment = env;
         }
 
         public IConfiguration Configuration { get; }
-        public IHostingEnvironment Environment { get; }
+        public IWebHostEnvironment Environment { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton(new CloudSettings
-            {
-                DBConnectionString_MongoDB = Configuration.GetSection("MongoDB:Identity:ConnectionString").Value,
-                DBConnectionString_MongoDB_DatabaseName = Configuration.GetSection("MongoDB:Identity:DatabaseName").Value,
-                Azure_Queue_ConnectionString = Configuration.GetSection("Azure:Storage:ConnectionString").Value,
-                Azure_Queue_Name_ReservationCompletedEvent = Configuration.GetSection("Azure:Storage:Queue:Name:RegistrationEvent").Value
-            });
+            services.AddAutoMapper(typeof(Startup));
+            services.AddMediatR(typeof(Startup));
+            services.AddScoped<GatedRegistrationContext>();
 
             services.AddSingleton(new AuthMessageSenderOptions
             {
@@ -73,22 +65,19 @@ namespace HAS.Registration
 
             services.AddSingleton<IUserStore<IdentityUser>>(provider =>
             {
-                var options = provider.GetService<CloudSettings>();
-                var client = new MongoClient(options.DBConnectionString_MongoDB);
-                var database = client.GetDatabase(options.DBConnectionString_MongoDB_DatabaseName);
+                var client = new MongoClient(Configuration["MongoDB:Identity:ConnectionString"]);
+                var database = client.GetDatabase(Configuration["MongoDB:Identity:Database:Name"]);
 
                 return UserStore<IdentityUser>.CreateAsync(database).GetAwaiter().GetResult();
             });
 
             services.AddTransient<IEmailSender, SendGridEmailSender>();
-
-            services.AddGatedRegstration();
-
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            
+            services.AddMvc(options => { options.EnableEndpointRouting = false; }).SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {

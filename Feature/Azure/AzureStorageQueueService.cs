@@ -1,13 +1,9 @@
-﻿using HAS.Registration.Configuration;
-using Microsoft.Azure.Storage;
+﻿using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Queue;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
-namespace HAS.Registration.ApplicationServices.Messaging
+namespace HAS.Registration.Feature.Azure
 {
     public class AzureStorageQueueService : IQueueService
     {

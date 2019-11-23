@@ -1,18 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.MongoDb;
-using IdentityUser = Microsoft.AspNetCore.Identity.MongoDb.IdentityUser;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using HAS.Registration.Models;
-using System.Text.Encodings.Web;
-using Microsoft.Extensions.Logging;
+﻿using HAS.Registration.Feature.Azure;
 using HAS.Registration.Feature.GatedRegistration;
-using HAS.Registration.ApplicationServices.Messaging;
-using HAS.Registration.Configuration;
+using HAS.Registration.Models;
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System.Net;
+using System.Text.Encodings.Web;
+using System.Threading.Tasks;
+using static HAS.Registration.Feature.GatedRegistration.RegisterUser;
+using IdentityUser = Microsoft.AspNetCore.Identity.MongoDb.IdentityUser;
 
 namespace HAS.Registration.Controllers
 {
@@ -21,22 +20,22 @@ namespace HAS.Registration.Controllers
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IEmailSender _emailSender;
         private readonly ILogger<AccountController> _logger;
-        private readonly IGatedRegistrationService _gatedRegistrationService;
         private readonly IQueueService _queueService;
+        private readonly IMediator _mediator;
 
         public AccountController(
             UserManager<IdentityUser> userManager, 
             IEmailSender emailSender, 
+            IMediator mediator,
             ILogger<AccountController> logger,
-            IGatedRegistrationService gatedRegistrationSvc,
-            CloudSettings cloudSettings)
+            IConfiguration configuration)
         {
             _userManager = userManager;
             _emailSender = emailSender;
+            _mediator = mediator;
             _logger = logger;
-            _gatedRegistrationService = gatedRegistrationSvc;
-            _queueService = AzureStorageQueueService.Create(cloudSettings.Azure_Queue_ConnectionString);
-            _queueService.CreateQueue(cloudSettings.Azure_Queue_Name_ReservationCompletedEvent);
+            _queueService = AzureStorageQueueService.Create(configuration["Azure:Storage:ConnectionString"]);
+            _queueService.CreateQueue(configuration["Azure:Storage:Queue:RegistrationEvent:Name"]);
         }
 
 
@@ -54,61 +53,65 @@ namespace HAS.Registration.Controllers
             if (ModelState.IsValid)
             {
                 // check if user is registed with GatedRegistration
-                var registerCheck = await _gatedRegistrationService.AttemptToRegister(model.Email, model.EntryCode);
-                var regCheckResult = registerCheck.Result.Result;
-                if(regCheckResult)
+                var registerCheck = await _mediator.Send(new RegisterUserCommand(model.Email, model.EntryCode));
+
+                return registerCheck.Result.StatusCode switch
                 {
-                    var user = new IdentityUser(model.Email, model.Email);
-                    var result = await _userManager.CreateAsync(user, model.Password);
-                    if (result.Succeeded)
-                    {
-                        _logger.LogInformation("User created a new account with password.");
+                    HttpStatusCode.NoContent => await RegisterUser(model),
 
-                        // Send an email with this link
-                        var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                    HttpStatusCode.OK => RedirectToAction("GatedRegistrationResult", "Account", new { code = HttpStatusCode.OK }),
 
-                        var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, Request.Scheme);
+                    HttpStatusCode.AlreadyReported => RedirectToAction("GatedRegistrationResult", "Account", new { code = HttpStatusCode.AlreadyReported }),
 
-                        await _emailSender.SendEmailAsync(model.Email, "MyPractice.Yoga Email Confirmation",
-                            "Please confirm your MyPractice.Yoga account by clicking this link: <a href=\"" + callbackUrl + "\">link</a>");
+                    HttpStatusCode.Found => RedirectToAction("GatedRegistrationResult", "Account", new { code = HttpStatusCode.Found }),
 
-                        //await _signInManager.SignInAsync(user, isPersistent: false);
+                    HttpStatusCode.Unauthorized => RedirectToAction("GatedRegistrationResult", "Account", new { code = HttpStatusCode.Unauthorized }),
 
-                        await _queueService.AddMessage<RegistrationCompletedEvent>(new RegistrationCompletedEvent { Email = user.Email.Value, UserId = user.Id });
-
-                        return View("Registered");
-                    }
-                    AddErrors(result);
-                }
-                else
-                {
-                    switch(registerCheck.Result.StatusCode)
-                    {
-                        case 200:
-                            return RedirectToAction("GatedRegistrationResult", "Account", new { code = 200 });
-
-                        case 204:
-                            return RedirectToAction("GatedRegistrationResult", "Account", new { code = 204 });
-
-                        case 302:
-                            return RedirectToAction("GatedRegistrationResult", "Account", new { code = 302 });
-
-                        case 401:
-                            return RedirectToAction("GatedRegistrationResult", "Account", new { code = 401 });
-
-                        default:
-                            return RedirectToAction("GatedRegistrationResult", "Account", new { code = 500 });
-
-                    }
-                }
+                    _ => RedirectToAction("GatedRegistrationResult", "Account", new { code = HttpStatusCode.BadRequest }),
+                };
             }
        
             // If we got this far, something failed, redisplay form
             return View(model);
         }
 
+        private async Task<ViewResult> RegisterUser(RegisterViewModel model)
+        {
+            var user = new IdentityUser(model.Email, model.Email);
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("User created a new account with password.");
+
+                await SendConfirmationEmail(user);
+                await RegisterWithMPY(user);
+
+                return View("Registered");
+            }
+            AddErrors(result);
+
+            // If we got this far, something failed, redisplay form
+            return View(model);
+        }
+
+        private async Task SendConfirmationEmail(IdentityUser user)
+        {
+            // Send an email with this link
+            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+            var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, Request.Scheme);
+
+            await _emailSender.SendEmailAsync(user.Email.Value, "MyPractice.Yoga Email Confirmation",
+                "Please confirm your MyPractice.Yoga account by clicking this link: <a href=\"" + callbackUrl + "\">link</a>");
+        }
+
+        private async Task RegisterWithMPY(IdentityUser user)
+        {
+            await _queueService.AddMessage<RegistrationCompletedEvent>(new RegistrationCompletedEvent { Email = user.Email.Value, UserId = user.Id });
+        }
+
         [HttpGet]
-        public IActionResult GatedRegistrationResult(int code)
+        public IActionResult GatedRegistrationResult(HttpStatusCode code)
         {
             return View(new GatedRegistrationResultViewModel(code));
         }
