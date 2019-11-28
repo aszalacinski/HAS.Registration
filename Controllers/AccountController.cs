@@ -34,7 +34,7 @@ namespace HAS.Registration.Controllers
             _emailSender = emailSender;
             _mediator = mediator;
             _logger = logger;
-            _queueService = AzureStorageQueueService.Create(configuration["Azure:Storage:ConnectionString"]);
+            _queueService = AzureStorageQueueService.Create(configuration["Azure:Storage:Events:ConnectionString"]);
             _queueService.CreateQueue(configuration["Azure:Storage:Queue:RegistrationEvent:Name"]);
         }
 
