@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace HAS.Registration.Feature.Azure
+namespace HAS.Registration.Feature.Azure.Queue
 {
     public interface IQueueService
     {

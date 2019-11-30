@@ -3,7 +3,7 @@ using Microsoft.Azure.Storage.Queue;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 
-namespace HAS.Registration.Feature.Azure
+namespace HAS.Registration.Feature.Azure.Queue
 {
     public class AzureStorageQueueService : IQueueService
     {

@@ -1,5 +1,5 @@
-﻿using HAS.Registration.Feature.Azure;
-using HAS.Registration.Feature.GatedRegistration;
+﻿using HAS.Registration.Feature.Azure.Queue;
+using HAS.Registration.Feature.Identity;
 using HAS.Registration.Models;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-using static HAS.Registration.Feature.GatedRegistration.RegisterUser;
+using static HAS.Registration.Feature.GatedRegistration.ValidateRegistration;
 using IdentityUser = Microsoft.AspNetCore.Identity.MongoDb.IdentityUser;
 
 namespace HAS.Registration.Controllers
@@ -53,7 +53,7 @@ namespace HAS.Registration.Controllers
             if (ModelState.IsValid)
             {
                 // check if user is registed with GatedRegistration
-                var registerCheck = await _mediator.Send(new RegisterUserCommand(model.Email, model.EntryCode));
+                var registerCheck = await _mediator.Send(new ValidateRegistrationCommand(model.Email, model.EntryCode));
 
                 return registerCheck.Result.StatusCode switch
                 {
@@ -107,7 +107,7 @@ namespace HAS.Registration.Controllers
 
         private async Task RegisterWithMPY(IdentityUser user)
         {
-            await _queueService.AddMessage<RegistrationCompletedEvent>(new RegistrationCompletedEvent { Email = user.Email.Value, UserId = user.Id });
+            await _queueService.AddMessage<RegisteredUserDetailsMessage>(new RegisteredUserDetailsMessage { Email = user.Email.Value, UserId = user.Id });
         }
 
         [HttpGet]

@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MyPractice.Yoga</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.11.2/css/all.css" integrity="sha384-KA6wR/X5RY4zFAHpv/CnoG2UW1uogYfdnP67Uv7eULvTveboZJg0qUpmJZb5VqzN" crossorigin="anonymous">
+    @RenderSection("Styles", false)
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light mb-3 d-none d-md-flex d-xl-flex">
+            <div class="container">
+                <a class="navbar-brand" asp-area="" asp-page="/Index">MPY</a>
+                <div class="navbar-collapse">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-page="/Index">Home</a>
+                        </li>
+                    </ul>
+                    <a asp-page="/Help" class="nav-link text-dark">Help</a>
+                    <a class="nav-link text-dark" asp-page="/Account/Login">Sign In</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container" style="height: 100vh">
+        <main role="main" class="pb-3">
+            <partial name="_StatusMessage" />
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted d-none d-md-flex d-xl-flex">
+        <div class="container">
+            &copy; 2019 - MyPractice.Yoga - <a asp-area="" asp-page="/Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

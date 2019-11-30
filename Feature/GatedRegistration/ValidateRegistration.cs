@@ -4,38 +4,36 @@ using HAS.Registration.Models;
 using MediatR;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using static HAS.Registration.Data.GatedRegistrationContext;
-using static HAS.Registration.Feature.GatedRegistration.AddUser;
-using static HAS.Registration.Feature.GatedRegistration.GetUserByEmailAddress;
-using static HAS.Registration.Feature.GatedRegistration.UpdateUser;
+using static HAS.Registration.Feature.GatedRegistration.AddUserToGatedRegistration;
+using static HAS.Registration.Feature.GatedRegistration.GetUserInGatedRegistrationByEmailAddress;
+using static HAS.Registration.Feature.GatedRegistration.UpdateUserInGatedRegistration;
 
 namespace HAS.Registration.Feature.GatedRegistration
 {
-    public class RegisterUser
+    public class ValidateRegistration
     {
-        public class RegisterUserCommand : IRequest<GatedRegistrationServiceResponse<RegistrationResult>>
+        public class ValidateRegistrationCommand : IRequest<ValidateRegistrationResponse<ValidateRegistrationResult>>
         {
             public string EmailAddress { get; private set; }
             public string EntryCode { get; private set; }
 
-            public RegisterUserCommand(string emailAddress, string entryCode)
+            public ValidateRegistrationCommand(string emailAddress, string entryCode)
             {
                 EmailAddress = emailAddress;
                 EntryCode = entryCode;
             }
         }
 
-        public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, GatedRegistrationServiceResponse<RegistrationResult>>
+        public class ValidateRegistrationCommandHandler : IRequestHandler<ValidateRegistrationCommand, ValidateRegistrationResponse<ValidateRegistrationResult>>
         {
             public readonly GatedRegistrationContext _db;
             private readonly MapperConfiguration _mapperConfiguration;
             private readonly IMediator _mediator;
 
-            public RegisterUserCommandHandler(GatedRegistrationContext db, IMediator mediator)
+            public ValidateRegistrationCommandHandler(GatedRegistrationContext db, IMediator mediator)
             {
                 _db = db;
                 _mediator = mediator;
@@ -45,11 +43,11 @@ namespace HAS.Registration.Feature.GatedRegistration
                 });
             }
 
-            public async Task<GatedRegistrationServiceResponse<RegistrationResult>> Handle(RegisterUserCommand cmd, CancellationToken cancellationToken)
+            public async Task<ValidateRegistrationResponse<ValidateRegistrationResult>> Handle(ValidateRegistrationCommand cmd, CancellationToken cancellationToken)
             {
                 var mapper = new Mapper(_mapperConfiguration);
 
-                InvitedUser invitedUser = await _mediator.Send(new GetUserByEmailAddressQuery(cmd.EmailAddress));
+                InvitedUser invitedUser = await _mediator.Send(new GetUserInGatedRegistrationByEmailAddressQuery(cmd.EmailAddress));
 
                 if(invitedUser != null)
                 {
@@ -61,28 +59,28 @@ namespace HAS.Registration.Feature.GatedRegistration
                             {
                                 invitedUser.Register();
                                 invitedUser.Log(true, 204, cmd.EntryCode);
-                                return await _mediator.Send(new UpdateUserCommand(invitedUser, HttpStatusCode.NoContent, "User successfully registered"));
+                                return await _mediator.Send(new UpdateUserInGatedRegistrationCommand(invitedUser, HttpStatusCode.NoContent, "User successfully registered"));
                             }
                             else
                             {
                                 // user is in database and was invited and has already registered
                                 // log entry attempt, return false
                                 invitedUser.Log(false, 208, cmd.EntryCode);
-                                return await _mediator.Send(new UpdateUserCommand(invitedUser, HttpStatusCode.AlreadyReported, "User has already registered"));
+                                return await _mediator.Send(new UpdateUserInGatedRegistrationCommand(invitedUser, HttpStatusCode.AlreadyReported, "User has already registered"));
                             }
                         }
                         else
                         {
                             //user attempted to log in with invalid entry code
                             invitedUser.Log(false, 401, cmd.EntryCode);
-                            return await _mediator.Send(new UpdateUserCommand(invitedUser, HttpStatusCode.Unauthorized, "User attempted to register with invalid entry code"));
+                            return await _mediator.Send(new UpdateUserInGatedRegistrationCommand(invitedUser, HttpStatusCode.Unauthorized, "User attempted to register with invalid entry code"));
                         }
                     }
                     else
                     {
                         // user is in database but is uninvited, capture email, log entry attempt, return false
                         invitedUser.Log(false, 302, cmd.EntryCode);
-                        return await _mediator.Send(new UpdateUserCommand(invitedUser, HttpStatusCode.Found, "User is in database but is uninvited"));
+                        return await _mediator.Send(new UpdateUserInGatedRegistrationCommand(invitedUser, HttpStatusCode.Found, "User is in database but is uninvited"));
                     }
                 }
                 else
@@ -91,24 +89,24 @@ namespace HAS.Registration.Feature.GatedRegistration
                     InvitedUser newUser = InvitedUser.Create(string.Empty, cmd.EmailAddress, "0F0F0F", false, false, DateTime.MinValue, new List<InvitedUserLogEntry>());
                     newUser.Log(false, 200, cmd.EntryCode);
 
-                    return await _mediator.Send(new AddUserCommand(newUser, HttpStatusCode.OK, "User was added to database as uninvited"));
+                    return await _mediator.Send(new AddUserToGatedRegistrationCommand(newUser, HttpStatusCode.OK, "User was added to database as uninvited"));
                 }
 
             }
         }
 
-        public class RegistrationResult
+        public class ValidateRegistrationResult
         {
             public HttpStatusCode StatusCode { get; private set; }
             public string Message { get; private set; }
 
-            private RegistrationResult(HttpStatusCode code, string message)
+            private ValidateRegistrationResult(HttpStatusCode code, string message)
             {
                 StatusCode = code;
                 Message = message;
             }
 
-            public static RegistrationResult Create(HttpStatusCode code, string message) => new RegistrationResult(code, message);
+            public static ValidateRegistrationResult Create(HttpStatusCode code, string message) => new ValidateRegistrationResult(code, message);
         }
     }
 }

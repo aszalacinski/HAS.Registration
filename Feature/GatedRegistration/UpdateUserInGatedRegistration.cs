@@ -10,19 +10,19 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using static HAS.Registration.Data.GatedRegistrationContext;
-using static HAS.Registration.Feature.GatedRegistration.RegisterUser;
+using static HAS.Registration.Feature.GatedRegistration.ValidateRegistration;
 
 namespace HAS.Registration.Feature.GatedRegistration
 {
-    public class UpdateUser
+    public class UpdateUserInGatedRegistration
     {
-        public class UpdateUserCommand : IRequest<GatedRegistrationServiceResponse<RegistrationResult>>
+        public class UpdateUserInGatedRegistrationCommand : IRequest<ValidateRegistrationResponse<ValidateRegistrationResult>>
         {
             public InvitedUser User { get; private set; }
             public HttpStatusCode Code { get; private set; }
             public string Message { get; private set; }
 
-            public UpdateUserCommand(InvitedUser user, HttpStatusCode code, string message)
+            public UpdateUserInGatedRegistrationCommand(InvitedUser user, HttpStatusCode code, string message)
             {
                 User = user;
                 Code = code;
@@ -30,12 +30,12 @@ namespace HAS.Registration.Feature.GatedRegistration
             }
         }
 
-        public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, GatedRegistrationServiceResponse<RegistrationResult>>
+        public class UpdateUserInGatedRegistrationCommandHandler : IRequestHandler<UpdateUserInGatedRegistrationCommand, ValidateRegistrationResponse<ValidateRegistrationResult>>
         {
             public readonly GatedRegistrationContext _db;
             private readonly MapperConfiguration _mapperConfiguration;
 
-            public UpdateUserCommandHandler(GatedRegistrationContext db)
+            public UpdateUserInGatedRegistrationCommandHandler(GatedRegistrationContext db)
             {
                 _db = db;
                 _mapperConfiguration = new MapperConfiguration(cfg =>
@@ -44,7 +44,7 @@ namespace HAS.Registration.Feature.GatedRegistration
                 });
             }
 
-            public async Task<GatedRegistrationServiceResponse<RegistrationResult>> Handle(UpdateUserCommand cmd, CancellationToken cancellationToken)
+            public async Task<ValidateRegistrationResponse<ValidateRegistrationResult>> Handle(UpdateUserInGatedRegistrationCommand cmd, CancellationToken cancellationToken)
             {
                 var mapper = new Mapper(_mapperConfiguration);
 
@@ -55,11 +55,11 @@ namespace HAS.Registration.Feature.GatedRegistration
                     var filter = Builders<InvitedUserDAO>.Filter.Eq(x => x.Id, dao.Id);
                     var update = await _db.Users.FindOneAndReplaceAsync(filter, dao);
 
-                    return new GatedRegistrationServiceResponse<RegistrationResult>(RegistrationResult.Create(cmd.Code, cmd.Message), cmd.Message);
+                    return new ValidateRegistrationResponse<ValidateRegistrationResult>(ValidateRegistrationResult.Create(cmd.Code, cmd.Message), cmd.Message);
                 }
                 catch(Exception)
                 {
-                    return new GatedRegistrationServiceResponse<RegistrationResult>(true, "An error occurred updating a user", RegistrationResult.Create(HttpStatusCode.BadRequest, "An error occurred updating a user"));
+                    return new ValidateRegistrationResponse<ValidateRegistrationResult>(true, "An error occurred updating a user", ValidateRegistrationResult.Create(HttpStatusCode.BadRequest, "An error occurred updating a user"));
                 }
             }
         }

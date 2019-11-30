@@ -1,14 +1,17 @@
 ﻿using AutoMapper;
-using HAS.Registration.ApplicationServices.SendGrid;
+using FluentValidation.AspNetCore;
 using HAS.Registration.Data;
-using HAS.Registration.Feature.GatedRegistration;
+using HAS.Registration.Feature.SendGrid;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.MongoDb;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -39,6 +42,18 @@ namespace HAS.Registration
             services.AddMediatR(typeof(Startup));
             services.AddScoped<GatedRegistrationContext>();
 
+            services.AddHttpClient();
+
+            services.AddHttpClient(HASClientFactories.PROFILE, client =>
+            {
+                client.BaseAddress = new Uri(Configuration["MPY:API:Profile:Authority"]);
+            });
+
+            services.AddHttpClient(HASClientFactories.IDENTITY, client =>
+            {
+                client.BaseAddress = new Uri(Configuration["MPY:IdentityServer:Authority"]);
+            });
+
             services.AddSingleton(new AuthMessageSenderOptions
             {
                 SendGridKey = Configuration.GetSection("SendGrid:Key").Value,
@@ -62,6 +77,17 @@ namespace HAS.Registration
             })
                 .AddDefaultTokenProviders();
 
+            services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+            services.AddScoped<IUrlHelper>(factory =>
+            {
+                var actionContext = factory.GetService<IActionContextAccessor>()
+                                               .ActionContext;
+                return new UrlHelper(actionContext);
+            });
+
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            services.AddHttpContextAccessor();
 
             services.AddSingleton<IUserStore<IdentityUser>>(provider =>
             {
@@ -72,8 +98,10 @@ namespace HAS.Registration
             });
 
             services.AddTransient<IEmailSender, SendGridEmailSender>();
-            
-            services.AddMvc(options => { options.EnableEndpointRouting = false; }).SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
+
+            services.AddRazorPages()
+                .AddRazorRuntimeCompilation()
+                .AddFluentValidation(cfg => { cfg.RegisterValidatorsFromAssemblyContaining<Startup>(); });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -82,6 +110,7 @@ namespace HAS.Registration
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.UseBrowserLink();
             }
             else
             {
@@ -94,11 +123,11 @@ namespace HAS.Registration
             app.UseStaticFiles();
             app.UseCookiePolicy();
 
-            app.UseMvc(routes =>
+            app.UseRouting();
+
+            app.UseEndpoints(endpoints =>
             {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapRazorPages();
             });
         }
     }

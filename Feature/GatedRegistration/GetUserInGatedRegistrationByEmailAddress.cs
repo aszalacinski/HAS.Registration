@@ -12,21 +12,21 @@ using static HAS.Registration.Data.GatedRegistrationContext;
 
 namespace HAS.Registration.Feature.GatedRegistration
 {
-    public class GetUserByEmailAddress
+    public class GetUserInGatedRegistrationByEmailAddress
     {
-        public class GetUserByEmailAddressQuery : IRequest<InvitedUser>
+        public class GetUserInGatedRegistrationByEmailAddressQuery : IRequest<InvitedUser>
         {
             public string EmailAddress { get; private set; }
 
-            public GetUserByEmailAddressQuery(string emailAddress) => EmailAddress = emailAddress;
+            public GetUserInGatedRegistrationByEmailAddressQuery(string emailAddress) => EmailAddress = emailAddress;
         }
 
-        public class GetUserByEmailAddressQueryHandler : IRequestHandler<GetUserByEmailAddressQuery, InvitedUser>
+        public class GetUserInGatedRegistrationByEmailAddressQueryHandler : IRequestHandler<GetUserInGatedRegistrationByEmailAddressQuery, InvitedUser>
         {
             public readonly GatedRegistrationContext _db;
             private readonly MapperConfiguration _mapperConfiguration;
 
-            public GetUserByEmailAddressQueryHandler(GatedRegistrationContext db)
+            public GetUserInGatedRegistrationByEmailAddressQueryHandler(GatedRegistrationContext db)
             {
                 _db = db;
                 _mapperConfiguration = new MapperConfiguration(cfg =>
@@ -35,7 +35,7 @@ namespace HAS.Registration.Feature.GatedRegistration
                 });
             }
 
-            public async Task<InvitedUser> Handle(GetUserByEmailAddressQuery query, CancellationToken cancellationToken)
+            public async Task<InvitedUser> Handle(GetUserInGatedRegistrationByEmailAddressQuery query, CancellationToken cancellationToken)
             {
                 var mapper = new Mapper(_mapperConfiguration);
 
