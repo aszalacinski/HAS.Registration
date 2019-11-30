@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Routing;
 using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,11 +28,11 @@ namespace HAS.Registration.Feature.Email
             private readonly IUrlHelper _urlHelper;
             private readonly IHttpContextAccessor _httpContextAcessor;
 
-            public SendResetPasswordEmailCommandHandler(UserManager<IdentityUser> userManager, IEmailSender emailSender, IUrlHelper urlHelper, IHttpContextAccessor httpContextAccessor)
+            public SendResetPasswordEmailCommandHandler(UserManager<IdentityUser> userManager, IEmailSender emailSender, IUrlHelperFactory urlHelperFactory, IHttpContextAccessor httpContextAccessor, IActionContextAccessor actionAccessor)
             {
                 _userManager = userManager;
                 _emailSender = emailSender;
-                _urlHelper = urlHelper;
+                _urlHelper = urlHelperFactory.GetUrlHelper(actionAccessor.ActionContext);
                 _httpContextAcessor = httpContextAccessor;
             }
 
@@ -38,7 +40,8 @@ namespace HAS.Registration.Feature.Email
             {
                 // Send an email with this link
                 var code = await _userManager.GeneratePasswordResetTokenAsync(cmd.User);
-                var callbackUrl = _urlHelper.Action("ResetPassword", "Account", new { code }, _httpContextAcessor.HttpContext.Request.Scheme);
+                
+                var callbackUrl = _urlHelper.Page("/Account/ResetPassword", null, new { code }, _httpContextAcessor.HttpContext.Request.Scheme);
 
                 await _emailSender.SendEmailAsync(cmd.User.Email.Value, "Reset Password for MyPractice.Yoga",
                     $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");

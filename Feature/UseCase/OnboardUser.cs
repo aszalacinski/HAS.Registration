@@ -40,14 +40,9 @@ namespace HAS.Registration.Feature.UseCase
 
             public async Task<string> Handle(OnboardUserCommand cmd, CancellationToken cancellationToken)
             {
-               return await Run(cmd.Username, cmd.Email, cmd.Password);
-            }
-
-            private async Task<string> Run(string username, string email, string password)
-            {
                 try
                 {
-                    var user = await _mediator.Send(new AddUserIdentityCommand(username, email, password));
+                    var user = await _mediator.Send(new AddUserIdentityCommand(cmd.Username, cmd.Email, cmd.Password));
 
                     if (user != null)
                     {
@@ -57,7 +52,7 @@ namespace HAS.Registration.Feature.UseCase
                         return "RegistrationResult";
                     }
                 }
-                catch(IdentityUserCreateException ex)
+                catch (IdentityUserCreateException ex)
                 {
                     throw ex;
                 }
@@ -65,6 +60,5 @@ namespace HAS.Registration.Feature.UseCase
                 return "Error";
             }
         }
-
     }
 }

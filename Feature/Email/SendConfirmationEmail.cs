@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.MongoDb;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Routing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,11 +31,11 @@ namespace HAS.Registration.Feature.Email
             private readonly IUrlHelper _urlHelper;
             private readonly IHttpContextAccessor _httpContextAcessor;
 
-            public SendConfirmationEmailCommandHelper(UserManager<IdentityUser> userManager, IEmailSender emailSender, IUrlHelper urlHelper, IHttpContextAccessor httpContextAccessor)
+            public SendConfirmationEmailCommandHelper(UserManager<IdentityUser> userManager, IEmailSender emailSender, IUrlHelperFactory urlHelperFactory, IHttpContextAccessor httpContextAccessor, IActionContextAccessor actionAccessor)
             {
                 _userManager = userManager;
                 _emailSender = emailSender;
-                _urlHelper = urlHelper;
+                _urlHelper = urlHelperFactory.GetUrlHelper(actionAccessor.ActionContext);
                 _httpContextAcessor = httpContextAccessor;
             }
 
@@ -42,10 +44,10 @@ namespace HAS.Registration.Feature.Email
                 // Send an email with this link
                 var code = await _userManager.GenerateEmailConfirmationTokenAsync(cmd.User);
 
-                var callbackUrl = _urlHelper.Action("ConfirmEmail", "Account", new { userId = cmd.User.Id, code = code }, _httpContextAcessor.HttpContext.Request.Scheme);
-                
+                var callbackUrl = _urlHelper.Page("/Account/ConfirmEmail", null, new { userId = cmd.User.Id, code = code }, _httpContextAcessor.HttpContext.Request.Scheme);
+
                 await _emailSender.SendEmailAsync(cmd.User.Email.Value, "MyPractice.Yoga Email Confirmation",
-                    "Please confirm your MyPractice.Yoga account by clicking this link: <a href=\"" + callbackUrl + "\">link</a>");
+                    $"Please confirm your MyPractice.Yoga account by clicking this link: <a href=\"{callbackUrl}\">link</a>");
 
                 return true;
             }

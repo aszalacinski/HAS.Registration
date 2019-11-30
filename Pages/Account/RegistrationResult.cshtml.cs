@@ -18,6 +18,10 @@ namespace HAS.Registration.Pages.Account
             switch (code)
             {
                 case HttpStatusCode.NoContent:
+                    Message = "<h2>MyPractice.Yoga Registration Successful</h2>" +
+                        "<p> You now need to confirm your registration. Please check your email and click the link in the confirmation email.</ p > ";
+                    break;
+
                 case HttpStatusCode.AlreadyReported:
                     Message = "You have already registered. Please login at <a href=\"https://www.mypractice.yoga\">MyPractice.Yoga</a>.";
                     break;

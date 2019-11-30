@@ -53,7 +53,7 @@ namespace HAS.Registration.Pages.Account
             {
                 RuleFor(m => m.Email).NotEmpty().EmailAddress();
                 RuleFor(m => m.Password).NotEmpty().MinimumLength(6).MaximumLength(100).WithMessage("The password must be at least 6 characters long.");
-                RuleFor(m => m.ConfirmPassword).NotEmpty().Matches(x => x.Password).WithMessage("The password and confirmation password do not match");
+                RuleFor(m => m.ConfirmPassword).NotEmpty().Equal(m => m.Password).WithMessage("The password and confirmation password do not match");
                 RuleFor(m => m.EntryCode).NotEmpty();
             }
         }
@@ -68,21 +68,35 @@ namespace HAS.Registration.Pages.Account
 
                 try
                 {
-                    return registerCheck.Result.StatusCode switch
+                    switch(registerCheck.Result.StatusCode)
                     {
+                        case HttpStatusCode.NoContent:
+                            var url = await _mediator.Send(new OnboardUserCommand(Data.Email, Data.Email, Data.Password));
+                            if(url.Equals("RegistrationResult"))
+                            {
+                                return RedirectToPage("RegistrationResult", new { code = HttpStatusCode.NoContent });
+                            }
+                            else
+                            {
+                                return RedirectToPage("RegistrationResult", new { code = HttpStatusCode.BadRequest });
+                            }
 
-                        HttpStatusCode.NoContent => await Onboard(Data.Email, Data.Email, Data.Password) == "RegistrationResult" ? RedirectToPage("RegistrationResult", new { code = HttpStatusCode.NoContent }) : RedirectToPage("RegistrationResult", new { code = HttpStatusCode.BadRequest }),
+                        case HttpStatusCode.OK:
+                            return RedirectToPage("RegistrationResult", new { code = HttpStatusCode.OK });
 
-                        HttpStatusCode.OK => RedirectToPage("RegistrationResult", new { code = HttpStatusCode.OK }),
+                        case HttpStatusCode.AlreadyReported:
+                            return RedirectToPage("RegistrationResult", new { code = HttpStatusCode.AlreadyReported });
 
-                        HttpStatusCode.AlreadyReported => RedirectToPage("RegistrationResult", new { code = HttpStatusCode.AlreadyReported }),
+                        case HttpStatusCode.Found:
+                            return RedirectToPage("RegistrationResult", new { code = HttpStatusCode.Found });
 
-                        HttpStatusCode.Found => RedirectToPage("RegistrationResult", new { code = HttpStatusCode.Found }),
+                        case HttpStatusCode.Unauthorized:
+                            return RedirectToPage("RegistrationResult", new { code = HttpStatusCode.Unauthorized });
 
-                        HttpStatusCode.Unauthorized => RedirectToPage("RegistrationResult", new { code = HttpStatusCode.Unauthorized }),
+                        default:
+                            return RedirectToPage("RegistrationResult", new { code = HttpStatusCode.BadRequest });
 
-                        _ => RedirectToPage("RegistrationResult", new { code = HttpStatusCode.BadRequest }),
-                    };
+                    }
 
                 }
                 catch(IdentityUserCreateException ex)

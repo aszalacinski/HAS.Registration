@@ -78,12 +78,7 @@ namespace HAS.Registration
                 .AddDefaultTokenProviders();
 
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
-            services.AddScoped<IUrlHelper>(factory =>
-            {
-                var actionContext = factory.GetService<IActionContextAccessor>()
-                                               .ActionContext;
-                return new UrlHelper(actionContext);
-            });
+            
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
