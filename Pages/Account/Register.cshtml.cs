@@ -42,26 +42,50 @@ namespace HAS.Registration.Pages.Account
         public string SubscriptionDetails { get; set; }
 
         public InstructorProfile Instructor { get; set; }
-        
+
         public async Task OnGet(string publicName, string code = null)
         {
             var newUserCommand = new RegisterNewUserCommand();
 
-            if(!string.IsNullOrEmpty(publicName))
+            // if publicName is NOT empty, then this is a student registration with a specific instructor
+            if (!string.IsNullOrEmpty(publicName))
             {
-                // check if publicName maps to instructor profile
-                var instructor = await GetInstructorDetails(publicName);
-
-                // if yes
-                if(instructor != null)
+                if(publicName.Trim().ToUpper() == "INSTRUCTOR")
                 {
-                    if(code != null)
+                    // code should be passed from the invitation email link
+                    if (code != null)
                     {
                         newUserCommand.EntryCode = code;
                     }
-                    Instructor = instructor;
-                    newUserCommand.InstructorId = instructor.InstructorId;
                 }
+                else
+                {
+                    // check if publicName maps to instructor profile
+                    var instructor = await GetInstructorDetails(publicName);
+
+                    // if yes
+                    if (instructor != null)
+                    {
+                        // code should be passed from the invitation email link
+                        if (code != null)
+                        {
+                            newUserCommand.EntryCode = code;
+                        }
+                        Instructor = instructor;
+                        newUserCommand.InstructorId = instructor.InstructorId;
+                    }
+                    else
+                    {
+                        // instructor doesn't exist so user is going to be registered as an invited instructor or uninvited user
+                        // do nothing
+                    }
+                }
+            } 
+            else
+            {
+                // this is could be an invited instructor registering
+                // or it's an uninvited user who found the registration page and is attempting to register
+                // do nothing
             }
 
             Data = newUserCommand;
@@ -105,6 +129,7 @@ namespace HAS.Registration.Pages.Account
             if (ModelState.IsValid)
             {
                 // check if user is registed with GatedRegistration
+                //TODO: for a student registration, pass instructors name to validate registration
                 var registerCheck = await _mediator.Send(new ValidateRegistrationCommand(Data.Email, Data.EntryCode));
 
                 try
@@ -115,6 +140,7 @@ namespace HAS.Registration.Pages.Account
                             var userId = await _mediator.Send(new OnboardUserCommand(Data.Email, Data.Email, Data.Password));
                             if (!string.IsNullOrEmpty(userId))
                             {
+                                // if instructor id is NOT null, then it's a student... take them through the student onboarding flow
                                 if(Data.InstructorId != null)
                                 {
                                     var subReg = new SubscriptionRegistration
@@ -130,6 +156,16 @@ namespace HAS.Registration.Pages.Account
                                 }
                                 else
                                 {
+                                    // this is an instructor so take them through the instructor onboarding flow
+                                    var subReg = new SubscriptionRegistration
+                                    {
+                                        UserId = userId,
+                                        Email = Data.Email,
+                                        InstructorId =userId
+                                    };
+
+                                    TempData.Set("SubscriptionDetails", subReg);
+
                                     return RedirectToPage("RegistrationResult", new { code = HttpStatusCode.NoContent });
                                 }
                             }
