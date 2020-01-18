@@ -49,15 +49,16 @@ namespace HAS.Registration.Feature.UseCase
                         var emailComplete = await _mediator.Send(new SendConfirmationEmailCommand(user));
                         var queueComplete = await _mediator.Send(new AddRegistrationCompletedEventToQueueCommand(user.Email.Value, user.Id));
 
-                        return "RegistrationResult";
+                        return user.Id;
                     }
+
+                    return string.Empty;
                 }
                 catch (IdentityUserCreateException ex)
                 {
                     throw ex;
                 }
 
-                return "Error";
             }
         }
     }

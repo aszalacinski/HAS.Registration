@@ -2,6 +2,7 @@
 using HAS.Registration.Models;
 using MongoDB.Bson;
 using static HAS.Registration.Data.GatedRegistrationContext;
+using Profile = AutoMapper.Profile;
 
 namespace HAS.Registration.Feature
 {

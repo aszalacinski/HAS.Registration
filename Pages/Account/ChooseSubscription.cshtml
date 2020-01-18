@@ -1,0 +1,62 @@
+﻿@page
+@model HAS.Registration.Pages.Account.ChooseSubscriptionModel
+@{
+    ViewData["Title"] = "ChooseSubscription";
+}
+
+<div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+    <h1 class="display-4">Pricing</h1>
+    <p class="lead">Select the subscription you would like to use to continue your practice with @Model.Instructor.PersonalDetails.FirstName</p>
+</div>
+
+<div class="container">
+    <div class="card-deck mb-3 text-center">
+        @{
+            foreach (var sub in Model.SubscriptionOptions)
+            {
+                string disabledParam = string.Empty;
+                string pimaryBtn = "btn-outline-primary";
+                string cursor = string.Empty;
+
+
+            <div class="card mb-4 shadow-sm">
+                    <div class="card-header">
+                        <h4 class="my-0 font-weight-normal">@sub.Title</h4>
+                    </div>
+                    <div class="card-body">
+                        <h1 class="card-title pricing-card-title">$@sub.Cost.ToString("0") <small class="text-muted">/ @sub.Term.Substring(0, 2).ToLower()</small></h1>
+                        <small>
+                            @sub.Description
+                        </small>
+                        <ul class="list-unstyled mt-3 mb-4">
+                            @{
+                                foreach (var feature in sub.Features)
+                                {
+                                    <li>@feature</li>
+                                }
+                            }
+                        </ul>
+                    </div>
+                    <div class="card-footer">
+                        @if (!sub.Enabled)
+                        {
+                            disabledParam = "disabled";
+                            cursor = "style=cursor:not-allowed;";
+                        }
+                        else
+                        {
+                            pimaryBtn = "btn-success";
+                        }
+                        <form method="post">
+                            <input type="hidden" asp-for="Data.StudentUserId" />
+                            <input type="hidden" asp-for="Data.InstructorProfileId" />
+                            <input type="hidden" asp-for="Data.SubscriptionId" value="@sub.Id" />
+                            <button type="submit" class="btn btn-lg btn-block @pimaryBtn" @disabledParam @cursor>Sign up for @sub.Amount.ToUpper()</button>
+
+                        </form>
+                    </div>
+            </div>
+            }
+        }
+    </div>
+</div>

@@ -95,6 +95,10 @@ namespace HAS.Registration
             services.AddTransient<IEmailSender, SendGridEmailSender>();
 
             services.AddRazorPages()
+                .AddRazorPagesOptions(options =>
+                {
+                    options.Conventions.AddPageRoute("/Account/Register", "{publicName}");
+                })
                 .AddRazorRuntimeCompilation()
                 .AddFluentValidation(cfg => { cfg.RegisterValidatorsFromAssemblyContaining<Startup>(); });
         }

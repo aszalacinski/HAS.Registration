@@ -15,7 +15,6 @@ namespace HAS.Registration.Pages.Account
     public class ResetPasswordModel : PageModel
     {
         private readonly UserManager<IdentityUser> _userManager;
-        private readonly IMediator _mediator;
 
         public ResetPasswordModel(UserManager<IdentityUser> userManager)
         {
