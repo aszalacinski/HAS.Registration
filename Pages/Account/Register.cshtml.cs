@@ -152,7 +152,7 @@ namespace HAS.Registration.Pages.Account
 
                                     TempData.Set("SubscriptionDetails", subReg);
 
-                                    return RedirectToPage("ChooseSubscription");
+                                    return RedirectToPage("./Onboard/ChooseSubscription");
                                 }
                                 else
                                 {
@@ -161,12 +161,12 @@ namespace HAS.Registration.Pages.Account
                                     {
                                         UserId = userId,
                                         Email = Data.Email,
-                                        InstructorId =userId
+                                        InstructorId = userId
                                     };
 
                                     TempData.Set("SubscriptionDetails", subReg);
 
-                                    return RedirectToPage("RegistrationResult", new { code = HttpStatusCode.NoContent });
+                                    return RedirectToPage("./Onboard/SetProfileDetails");
                                 }
                             }
                             else

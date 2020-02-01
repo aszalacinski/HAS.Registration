@@ -14,7 +14,7 @@ using static HAS.Registration.Feature.Alert.ThrowAlert;
 using static HAS.Registration.Feature.IdentityServer.GetAccessToken;
 using static HAS.Registration.GetAppProfileById;
 
-namespace HAS.Registration.Pages.Account
+namespace HAS.Registration.Pages.Account.Onboard
 {
     public class ChooseSubscriptionModel : PageModel
     {
