@@ -44,19 +44,13 @@ namespace HAS.Registration.Pages.Account.Onboard
         public async Task<IActionResult> OnGet()
         {
 
-            if(TempData.Peek<SubscriptionRegistration>("SubscriptionDetails") == null)
+            if(TempData.Peek<UserRegistration>("UserRegistration") == null)
             {
-                var temp = new SubscriptionRegistration
-                {
-                    Email = "aarron.szalacinski@outlook.com",
-                    UserId = "5de29b3c67cfc7a30828b60e",
-                    InstructorId = "5d38ed391c9d4400005ca554"
-                };
-
-                TempData.Set("SubscriptionDetails", temp);
+                await _mediator.Send(new ThrowAlertCommand(AlertType.DANGER, $"An Error Has Occurred", "An error has occurred during user onboarding. Please contact support."));
+                return RedirectToPage("~/Error");
             }
 
-            var subscriptionReg = TempData.Peek<SubscriptionRegistration>("SubscriptionDetails");
+            var subscriptionReg = TempData.Get<UserRegistration>("UserRegistration");
 
             if(subscriptionReg == null)
             {

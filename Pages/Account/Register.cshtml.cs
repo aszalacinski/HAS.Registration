@@ -14,6 +14,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using static HAS.Registration.Feature.Alert.ThrowAlert;
+using static HAS.Registration.Feature.GatedRegistration.GetUserInGatedRegistrationByEmailAddress;
 using static HAS.Registration.Feature.GatedRegistration.ValidateRegistration;
 using static HAS.Registration.Feature.Identity.AddUserIdentity;
 using static HAS.Registration.Feature.IdentityServer.GetAccessToken;
@@ -61,18 +62,17 @@ namespace HAS.Registration.Pages.Account
                 else
                 {
                     // check if publicName maps to instructor profile
-                    var instructor = await GetInstructorDetails(publicName);
+                    Instructor = await GetInstructorDetails(publicName);
 
                     // if yes
-                    if (instructor != null)
+                    if (Instructor != null)
                     {
                         // code should be passed from the invitation email link
                         if (code != null)
                         {
                             newUserCommand.EntryCode = code;
                         }
-                        Instructor = instructor;
-                        newUserCommand.InstructorId = instructor.InstructorId;
+                        newUserCommand.InstructorId = Instructor.ProfileId;
                     }
                     else
                     {
@@ -131,6 +131,9 @@ namespace HAS.Registration.Pages.Account
                 // check if user is registed with GatedRegistration
                 //TODO: for a student registration, pass instructors name to validate registration
                 var registerCheck = await _mediator.Send(new ValidateRegistrationCommand(Data.Email, Data.EntryCode));
+                
+                // get invited user details from database
+                var regDetails = await _mediator.Send(new GetUserInGatedRegistrationByEmailAddressQuery(Data.Email));
 
                 try
                 {
@@ -140,31 +143,24 @@ namespace HAS.Registration.Pages.Account
                             var userId = await _mediator.Send(new OnboardUserCommand(Data.Email, Data.Email, Data.Password));
                             if (!string.IsNullOrEmpty(userId))
                             {
+                                
                                 // if instructor id is NOT null, then it's a student... take them through the student onboarding flow
-                                if(Data.InstructorId != null)
+                                if (Data.InstructorId != null)
                                 {
-                                    var subReg = new SubscriptionRegistration
-                                    {
-                                        UserId = userId,
-                                        Email = Data.Email,
-                                        InstructorId = Data.InstructorId
-                                    };
+                                    var userReg = UserRegistration.Create(userId, string.Empty, regDetails.FirstName, regDetails.LastName, Data.Email, Data.InstructorId);
 
-                                    TempData.Set("SubscriptionDetails", subReg);
+                                    TempData.Set("UserRegistration", userReg);
 
                                     return RedirectToPage("./Onboard/ChooseSubscription");
                                 }
                                 else
                                 {
-                                    // this is an instructor so take them through the instructor onboarding flow
-                                    var subReg = new SubscriptionRegistration
-                                    {
-                                        UserId = userId,
-                                        Email = Data.Email,
-                                        InstructorId = userId
-                                    };
+                                    // this is an instructor
 
-                                    TempData.Set("SubscriptionDetails", subReg);
+                                    // take them through the instructor onboarding flow
+                                    var userReg = UserRegistration.Create(userId, string.Empty, regDetails.FirstName, regDetails.LastName,  Data.Email, string.Empty);
+
+                                    TempData.Set("UserRegistration", userReg);
 
                                     return RedirectToPage("./Onboard/SetProfileDetails");
                                 }
@@ -214,16 +210,8 @@ namespace HAS.Registration.Pages.Account
         {
             var profile = await _mediator.Send(new GetAppProfileByPublicNameQuery(publicName));
 
-            var instructor = new InstructorProfile
-            {
-                Email = profile.PersonalDetails.Email,
-                FirstName = profile.PersonalDetails.FirstName,
-                InstructorId = profile.Id,
-                LastName = profile.PersonalDetails.LastName,
-                PublicName = profile.AppDetails.InstructorDetails.PublicName,
-                ScreenName = profile.PersonalDetails.ScreenName
-            };
-
+            var instructor = InstructorProfile.Create(profile.PersonalDetails.UserId, profile.Id, profile.PersonalDetails.FirstName, profile.PersonalDetails.LastName, profile.PersonalDetails.Email, profile.PersonalDetails.ScreenName, profile.AppDetails.InstructorDetails.PublicName);
+            
             return instructor;
 
         }

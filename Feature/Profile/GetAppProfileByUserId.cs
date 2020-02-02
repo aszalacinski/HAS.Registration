@@ -10,28 +10,28 @@ using static HAS.Registration.Feature.IdentityServer.GetAccessToken;
 
 namespace HAS.Registration
 {
-    public class GetAppProfileById
+    public class GetAppProfileByUserId
     {
-        public class GetAppProfileByIdQuery : IRequest<Profile>
+        public class GetAppProfileByUserIdQuery : IRequest<Profile>
         {
-            public string ProfileId { get; private set; }
-            public GetAppProfileByIdQuery(string profileId) => ProfileId = profileId;
+            public string UserId { get; private set; }
+            public GetAppProfileByUserIdQuery(string userId) => UserId = userId;
         }
 
-        public class GetAppProfileByIdQueryHandler : IRequestHandler<GetAppProfileByIdQuery, Profile>
+        public class GetAppProfileByUserIdQueryHandler : IRequestHandler<GetAppProfileByUserIdQuery, Profile>
         {
             private readonly IMediator _mediator;
             private readonly HttpClient _httpClient;
             private readonly IConfiguration _configuration;
 
-            public GetAppProfileByIdQueryHandler(IMediator mediator, IHttpClientFactory httpClientFactory, IConfiguration configuration)
+            public GetAppProfileByUserIdQueryHandler(IMediator mediator, IHttpClientFactory httpClientFactory, IConfiguration configuration)
             {
                 _mediator = mediator;
                 _httpClient = httpClientFactory.CreateClient(HASClientFactories.PROFILE);
                 _configuration = configuration;
             }
 
-            public async Task<Profile> Handle(GetAppProfileByIdQuery query, CancellationToken cancellationToken)
+            public async Task<Profile> Handle(GetAppProfileByUserIdQuery query, CancellationToken cancellationToken)
             {
                 var clientId = _configuration["MPY:IdentityServer:RegistrationApp:ClientId"];
                 var clientSecret = _configuration["MPY:IdentityServer:RegistrationApp:ClientSecret"];
@@ -40,7 +40,7 @@ namespace HAS.Registration
                 // get access token
                 var token = await _mediator.Send(new GetAccessTokenCommand(clientId, clientSecret, scopes));
 
-                string uri = $"{query.ProfileId}";
+                string uri = $"by/{query.UserId}";
 
                 _httpClient.SetBearerToken(token);
 

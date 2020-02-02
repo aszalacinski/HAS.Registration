@@ -3,30 +3,72 @@
 @{
     ViewData["Title"] = "Set your Profile Details";
 }
-    <div class="row">
-        <div class="col-md-6">
-            <div asp-validation-summary="All" class="text-danger"></div>
-            <form method="post" class="form-horizontal" role="form">
+<div class="row">
+    <div class="col">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <form method="post" class="form-horizontal" role="form">
 
-                <h4>Verify your Profile Details</h4>
-                <small>Make sure you profile details are set as you want them to appear on the site to other users.</small>
-                
-                <hr />
-                <div asp-validation-summary="All" class="text-danger"></div>
-                <div class="form-group">
-                    <label asp-for="Data.Email" class="col-md-4 control-label"></label>
-                    <div class="col-md-10">
-                        <input asp-for="Data.Email" class="form-control" />
+            <h4>Verify your Profile Details</h4>
+            <small>Make sure you profile details are set as you want them to appear on the site to other users.</small>
+
+            <hr />
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label asp-for="Data.FirstName"></label>
+                        <input asp-for="Data.FirstName" placeholder="Instructor First Name" class="form-control" />
+                        <span asp-validation-for="Data.FirstName" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label asp-for="Data.LastName"></label>
+                        <input asp-for="Data.LastName" placeholder="Instructor Last Name" class="form-control" />
+                        <span asp-validation-for="Data.LastName" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label asp-for="Data.ScreenName"></label>
+                        <input asp-for="Data.ScreenName" placeholder="Instructor Screen Name" class="form-control" readonly />
+                        <small>The Screen Name will be how your name will appear to other Student and Instructors in the app.</small>
+                        <span asp-validation-for="Data.ScreenName" class="text-danger"></span>
+                    </div>
+                </div>
+                @{
+                    if (Model.Data.IsInstructor)
+                    {
+                        <div class="col">
+                            <div class="form-group">
+                                <label asp-for="Data.PublicName"></label>
+                                <input asp-for="Data.PublicName" placeholder="Instructor Last Name" class="form-control" />
+                                <small>The Public Name will be used to construct your unique, personal Registration page that students will use to sign up for your classes.</small>
+                                <span asp-validation-for="Data.PublicName" class="text-danger"></span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Data.Email" class="col-md-4 control-label"></label>
+                        <input asp-for="Data.Email" class="form-control" readonly />
                         <span asp-validation-for="Data.Email" class="text-danger"></span>
                     </div>
                 </div>
-                
+            </div>
 
-                <div class="form-group">
-                    <div class="col-md-offset-4 col-md-10">
-                        <button type="submit" class="btn btn-primary">Continue</button>
-                    </div>
+            <div class="form-group">
+                <div class="col-md-offset-4 col-md-10">
+                    <input type="hidden" asp-for="Data.InstructorId" />
+                    <input type="hidden" asp-for="Data.ProfileId" />
+                    <input type="hidden" asp-for="Data.UserId" />
+                    <button type="submit" class="btn btn-primary">Continue</button>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
+</div>

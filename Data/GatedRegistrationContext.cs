@@ -29,6 +29,12 @@ namespace HAS.Registration.Data
             [BsonId]
             [BsonElement("_id")]
             public ObjectId Id { get; set; }
+            
+            [BsonElement("fname")]
+            public string FirstName { get; set; }
+
+            [BsonElement("lname")]
+            public string LastName { get; set; }
 
             [BsonElement("email")]
             public string EmailAddress { get; set; }

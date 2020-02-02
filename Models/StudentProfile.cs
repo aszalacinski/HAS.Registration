@@ -7,10 +7,12 @@ namespace HAS.Registration.Models
 {
     public class StudentProfile
     {
-        public string InstructorId { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Email { get; set; }
-        public string ScreenName { get; set; }
+        public string UserId { get; private set; }
+        public string ProfileId { get; private set; }
+        public string InstructorId { get; private set; }
+        public string FirstName { get; private set; }
+        public string LastName { get; private set; }
+        public string Email { get; private set; }
+        public string ScreenName { get; private set; }
     }
 }
