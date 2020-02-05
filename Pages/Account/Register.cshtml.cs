@@ -151,7 +151,7 @@ namespace HAS.Registration.Pages.Account
 
                                     TempData.Set("UserRegistration", userReg);
 
-                                    return RedirectToPage("./Onboard/ChooseSubscription");
+                                    return RedirectToPage("./Onboard/SetProfileDetails");
                                 }
                                 else
                                 {

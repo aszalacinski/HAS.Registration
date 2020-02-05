@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using HAS.Registration.Models;
+using IdentityModel.Client;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -13,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using static HAS.Registration.Feature.Alert.ThrowAlert;
 using static HAS.Registration.Feature.IdentityServer.GetAccessToken;
 using static HAS.Registration.GetAppProfileById;
+using static HAS.Registration.SetRateModel;
 
 namespace HAS.Registration.Pages.Account.Onboard
 {
@@ -34,10 +37,10 @@ namespace HAS.Registration.Pages.Account.Onboard
 
         public Profile Instructor { get; set; }
 
-        public class SubscribeCommand : IRequest<string>
+        public class SubscribeCommand : IRequest<Profile>
         {
-            public string StudentUserId { get; set; }
-            public string InstructorProfileId { get; set; }
+            public string ProfileId { get; set; }
+            public string InstructorId { get; set; }
             public string SubscriptionId { get; set; }
         }
 
@@ -66,7 +69,10 @@ namespace HAS.Registration.Pages.Account.Onboard
                 // get subscriptions
                 SubscriptionOptions = await _mediator.Send(new GetInstructorSubscriptionsQuery(subscriptionReg.InstructorId));
                 
-                Data = new SubscribeCommand { InstructorProfileId = Instructor.Id, StudentUserId = subscriptionReg.UserId };
+                Data = new SubscribeCommand { 
+                    InstructorId = Instructor.Id, 
+                    ProfileId = subscriptionReg.ProfileId
+                };
                 return Page();
             }
             else
@@ -77,32 +83,91 @@ namespace HAS.Registration.Pages.Account.Onboard
             }
         }
 
-        public IActionResult OnPost()
-        { 
-            // update use profile with selection
-            // use the student user id to update the student profile
+        public async Task<IActionResult> OnPost()
+        {   
+            try
+            {
+                var profile = await _mediator.Send(Data);
 
-            // update instructor default tribe with selection
-            // use the instructor id to update the instructor profile
+                return RedirectToPage("../RegistrationResult", new { code = HttpStatusCode.NoContent });
+            }
+            catch(Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+                await _mediator.Send(new ThrowAlertCommand(AlertType.DANGER, $"An Error has occurred", ex.Message));
+            }
 
-            return RedirectToPage("CompleteRegistration");
+            return Page();
         }
 
-        public class GetInstructorSubscriptionsQuery : IRequest<IEnumerable<Subscription>>
+        public class GetInstructorSubscriptionsQuery : IRequest<List<Subscription>>
         {
             public string InstructorId { get; private set; }
 
             public GetInstructorSubscriptionsQuery(string instructorId) => InstructorId = instructorId;
         }
 
-        public class GetInstructorSubscriptionsQueryHandler : IRequestHandler<GetInstructorSubscriptionsQuery, IEnumerable<Subscription>>
+        public class GetInstructorSubscriptionsQueryHandler : IRequestHandler<GetInstructorSubscriptionsQuery, List<Subscription>>
         {
-            public Task<IEnumerable<Subscription>> Handle(GetInstructorSubscriptionsQuery query, CancellationToken cancellationToken)
+            private IMediator _mediator;
+            private readonly HttpClient _httpClientTribe;
+            private readonly HttpClient _httpClientProfile;
+            private readonly IConfiguration _configuration;
+
+            public GetInstructorSubscriptionsQueryHandler(IMediator mediator, IHttpClientFactory httpClientFactory, IConfiguration configuration)
             {
-                return Task.FromResult(InitSubs(query.InstructorId));
+                _mediator = mediator;
+                _httpClientTribe = httpClientFactory.CreateClient(HASClientFactories.TRIBE);
+                _httpClientProfile = httpClientFactory.CreateClient(HASClientFactories.PROFILE);
+                _configuration = configuration;
             }
 
-            private IEnumerable<Subscription> InitSubs(string instructorId)
+
+            public async Task<List<Subscription>> Handle(GetInstructorSubscriptionsQuery query, CancellationToken cancellationToken)
+            {
+                var clientId = _configuration["MPY:IdentityServer:RegistrationApp:ClientId"];
+                var clientSecret = _configuration["MPY:IdentityServer:RegistrationApp:ClientSecret"];
+                var scopes = _configuration["MPY:IdentityServer:RegistrationApp:Scopes"];
+
+                // get access token
+                var token = await _mediator.Send(new GetAccessTokenCommand(clientId, clientSecret, scopes));
+
+                _httpClientTribe.SetBearerToken(token);
+
+                string getTribesByInstructorUrl = $"{query.InstructorId}/a";
+
+                var getTribeByInstructorIdResponse = await _httpClientTribe.GetAsync(getTribesByInstructorUrl);
+
+                if(!getTribeByInstructorIdResponse.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Something failed in retrieving the instructors tribes.");
+                }
+
+                var getTribesByInstructorIdContent = await getTribeByInstructorIdResponse.Content.ReadAsStringAsync();
+
+                var tribes = JsonSerializer.Deserialize<List<Tribe>>(getTribesByInstructorIdContent, DefaultJsonSettings.Settings);
+
+                if(tribes.Count() <= 0)
+                {
+                    throw new Exception($"No tribes for instructor");
+                }
+                
+                // find the default tribe
+                var tribe = tribes.Where(x => x.Name.Contains($"Default-{query.InstructorId}")).FirstOrDefault();
+
+                if(tribe == null)
+                {
+                    throw new Exception($"Tribe not found");
+                }
+
+                var subscriptions = InitSubs(query.InstructorId);
+
+                subscriptions[0].Id = tribe.Id;
+                
+                return subscriptions;
+            }
+
+            private List<Subscription> InitSubs(string instructorId)
             {
                 return new List<Subscription>
             {
@@ -153,6 +218,59 @@ namespace HAS.Registration.Pages.Account.Onboard
                     }
                 }
             };
+            }
+        }
+
+        public class SubscribeCommandHandler : IRequestHandler<SubscribeCommand, Profile>
+        {
+            private readonly IMediator _mediator;
+            private readonly HttpClient _httpClientTribe;
+            private readonly HttpClient _httpClientProfile;
+            private readonly IConfiguration _configuration;
+
+            public SubscribeCommandHandler(IMediator mediator, IHttpClientFactory httpClientFactory, IConfiguration configuration)
+            {
+                _mediator = mediator;
+                _httpClientTribe = httpClientFactory.CreateClient(HASClientFactories.TRIBE);
+                _httpClientProfile = httpClientFactory.CreateClient(HASClientFactories.PROFILE);
+                _configuration = configuration;
+            }
+
+            public async Task<Profile> Handle(SubscribeCommand cmd, CancellationToken cancellationToken)
+            {
+                var clientId = _configuration["MPY:IdentityServer:RegistrationApp:ClientId"];
+                var clientSecret = _configuration["MPY:IdentityServer:RegistrationApp:ClientSecret"];
+                var scopes = _configuration["MPY:IdentityServer:RegistrationApp:Scopes"];
+
+                // get access token
+                var token = await _mediator.Send(new GetAccessTokenCommand(clientId, clientSecret, scopes));
+
+                _httpClientTribe.SetBearerToken(token);
+                _httpClientProfile.SetBearerToken(token);
+
+                // add student to instructor tribe
+                string addStudentToTribeUrl = $"{cmd.InstructorId}/{cmd.SubscriptionId}/a/{cmd.ProfileId}";
+
+                var addStudentToTribeResponse = await _httpClientTribe.PutAsync(addStudentToTribeUrl, null);
+
+                if (!addStudentToTribeResponse.IsSuccessStatusCode)
+                {
+                    throw new AddStudentToTribeException($"Could not add {cmd.ProfileId} to tribe {cmd.SubscriptionId}. Please contact support");
+                }
+
+                // add subscription to instructor to student profile
+                string addSubscriptionToStudentUrl = $"{cmd.ProfileId}/sub/add/{cmd.InstructorId}";
+
+                var addSubscriptionToStudentResponse = await _httpClientProfile.PutAsync(addSubscriptionToStudentUrl, null);
+
+                var addSubContent = await addSubscriptionToStudentResponse.Content.ReadAsStringAsync();
+
+                if (!addSubscriptionToStudentResponse.IsSuccessStatusCode)
+                {
+                    throw new AddSubscriptionToAccountException($"Could not add {cmd.InstructorId} class to {cmd.ProfileId} as a subscription. Please contact support.");
+                }
+
+                return JsonSerializer.Deserialize<Profile>(addSubContent, DefaultJsonSettings.Settings);
             }
         }
 

@@ -37,7 +37,7 @@ namespace HAS.Registration
 
         public StudentProfile Student { get; set; }
         
-        public async Task<IActionResult> OnGet(bool isDev = false)
+        public async Task<IActionResult> OnGet()
         {
             var updateUserDetails = new UpdateUserProfileDetailsCommand();
 
@@ -52,13 +52,13 @@ namespace HAS.Registration
             // if instructoriId is not empty
             if (!string.IsNullOrEmpty(userRegDetails.InstructorId) || !userRegDetails.InstructorId.Equals(userRegDetails.ProfileId))
             {
-                Student = new StudentProfile(); // TODO: Populate with Call to GetStudentProfile
+                Student = await GetStudentDetails(userRegDetails.UserId, userRegDetails.InstructorId);
 
                 updateUserDetails.IsInstructor = false;
-                updateUserDetails.InstructorId = userRegDetails.InstructorId;
-                updateUserDetails.ProfileId = string.Empty; // TODO: Populate with Call to GetStudentProfile
-                updateUserDetails.UserId = userRegDetails.UserId;
-                updateUserDetails.Email = userRegDetails.Email;
+                updateUserDetails.InstructorId = Student.InstructorId;
+                updateUserDetails.ProfileId = Student.ProfileId;
+                updateUserDetails.UserId = Student.UserId;
+                updateUserDetails.Email = Student.Email;
                 updateUserDetails.FirstName = userRegDetails.FirstName;
                 updateUserDetails.LastName = userRegDetails.LastName;
                 updateUserDetails.ScreenName = $"{userRegDetails.FirstName[0]}{userRegDetails.LastName}";
@@ -242,10 +242,9 @@ namespace HAS.Registration
                 }
                 else
                 {
-                    // update some student stuff related to instructor
+                    // student specific account setup goes here... beyond profile update
                 }
-
-
+                
                 return JsonSerializer.Deserialize<Profile>(prContent, DefaultJsonSettings.Settings); ;
             }
         }
@@ -264,7 +263,21 @@ namespace HAS.Registration
             var instructor = InstructorProfile.Create(profile.PersonalDetails.UserId, profile.Id, profile.PersonalDetails.FirstName, profile.PersonalDetails.LastName, profile.PersonalDetails.Email, profile.PersonalDetails.ScreenName, profile.AppDetails.InstructorDetails.PublicName);
 
             return instructor;
+        }
 
+        private async Task<StudentProfile> GetStudentDetails(string userId, string instructorId)
+        {
+            Profile profile = null;
+
+            while(profile == null)
+            {
+                profile = await _mediator.Send(new GetAppProfileByUserIdQuery(userId));
+                Thread.Sleep(1000);
+            }
+
+            var student = StudentProfile.Create(profile.PersonalDetails.UserId, profile.Id, instructorId, profile.PersonalDetails.FirstName, profile.PersonalDetails.LastName, profile.PersonalDetails.Email, profile.PersonalDetails.ScreenName);
+
+            return student;
         }
 
         public class UserProfileUpdateException : Exception

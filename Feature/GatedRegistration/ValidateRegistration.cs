@@ -86,7 +86,7 @@ namespace HAS.Registration.Feature.GatedRegistration
                 else
                 {
                     // add user to database as uninvited, capture email, log entry attempt return false
-                    InvitedUser newUser = InvitedUser.Create(string.Empty, string.Empty, string.Empty, cmd.EmailAddress, "0F0F0F", false, false, DateTime.MinValue, new List<InvitedUserLogEntry>());
+                    InvitedUser newUser = InvitedUser.Create(string.Empty, string.Empty, string.Empty, cmd.EmailAddress, string.Empty, string.Empty, "0F0F0F", false, false, DateTime.MinValue, new List<InvitedUserLogEntry>());
                     newUser.Log(false, 200, cmd.EntryCode);
 
                     return await _mediator.Send(new AddUserToGatedRegistrationCommand(newUser, HttpStatusCode.OK, "User was added to database as uninvited"));

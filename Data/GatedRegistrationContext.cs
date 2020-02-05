@@ -4,8 +4,6 @@ using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace HAS.Registration.Data
 {
@@ -38,6 +36,12 @@ namespace HAS.Registration.Data
 
             [BsonElement("email")]
             public string EmailAddress { get; set; }
+
+            [BsonElement("i_id")]
+            public string InstructorId { get; set; }
+
+            [BsonElement("ipname")]
+            public string InstructorPublicName { get; set; }
 
             [BsonElement("code")]
             public string EntryCode { get; set; }

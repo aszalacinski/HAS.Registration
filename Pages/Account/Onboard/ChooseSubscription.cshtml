@@ -48,8 +48,8 @@
                             pimaryBtn = "btn-success";
                         }
                         <form method="post">
-                            <input type="hidden" asp-for="Data.StudentUserId" />
-                            <input type="hidden" asp-for="Data.InstructorProfileId" />
+                            <input type="hidden" asp-for="Data.InstructorId" />
+                            <input type="hidden" asp-for="Data.ProfileId" />
                             <input type="hidden" asp-for="Data.SubscriptionId" value="@sub.Id" />
                             <button type="submit" class="btn btn-lg btn-block @pimaryBtn" @disabledParam @cursor>Sign up for @sub.Amount.ToUpper()</button>
 
