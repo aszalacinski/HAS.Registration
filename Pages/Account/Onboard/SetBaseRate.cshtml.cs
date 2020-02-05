@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -90,7 +91,7 @@ namespace HAS.Registration
 
                     TempData.Set("UserRegistration", userReg);
 
-                    return RedirectToPage("SetBillingInfo");
+                    return RedirectToPage("../RegistrationResult", new { code = HttpStatusCode.NoContent });
                 }
                 // TODO: Add rollback logic
                 catch(AddStudentTribeException ex)
