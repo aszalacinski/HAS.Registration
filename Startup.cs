@@ -44,6 +44,11 @@ namespace HAS.Registration
 
             services.AddHttpClient();
 
+            services.AddHttpClient(HASClientFactories.TRIBE, client =>
+            {
+                client.BaseAddress = new Uri(Configuration["MPY:API:Tribe:Authority"]);
+            });
+
             services.AddHttpClient(HASClientFactories.PROFILE, client =>
             {
                 client.BaseAddress = new Uri(Configuration["MPY:API:Profile:Authority"]);

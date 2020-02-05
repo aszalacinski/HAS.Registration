@@ -147,7 +147,7 @@ namespace HAS.Registration.Pages.Account
                                 // if instructor id is NOT null, then it's a student... take them through the student onboarding flow
                                 if (Data.InstructorId != null)
                                 {
-                                    var userReg = UserRegistration.Create(userId, string.Empty, regDetails.FirstName, regDetails.LastName, Data.Email, Data.InstructorId);
+                                    var userReg = UserRegistration.Create(userId, string.Empty, regDetails.FirstName, regDetails.LastName, Data.Email, Data.InstructorId, string.Empty);
 
                                     TempData.Set("UserRegistration", userReg);
 
@@ -158,7 +158,7 @@ namespace HAS.Registration.Pages.Account
                                     // this is an instructor
 
                                     // take them through the instructor onboarding flow
-                                    var userReg = UserRegistration.Create(userId, string.Empty, regDetails.FirstName, regDetails.LastName,  Data.Email, string.Empty);
+                                    var userReg = UserRegistration.Create(userId, string.Empty, regDetails.FirstName, regDetails.LastName,  Data.Email, string.Empty, string.Empty);
 
                                     TempData.Set("UserRegistration", userReg);
 

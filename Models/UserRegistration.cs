@@ -16,13 +16,14 @@ namespace HAS.Registration.Models
         public string LastName { get; set; }
         public string Email { get; set; }
         public string InstructorId { get; set; }
+        public string TribeId { get; set; }
 
         public UserRegistration()
         {
 
         }
 
-        private UserRegistration(string userId, string profileId, string firstName, string lastName, string email, string instructorId)
+        private UserRegistration(string userId, string profileId, string firstName, string lastName, string email, string instructorId, string tribeId)
         {
             UserId = userId;
             ProfileId = profileId;
@@ -30,9 +31,10 @@ namespace HAS.Registration.Models
             LastName = lastName;
             Email = email;
             InstructorId = instructorId;
+            TribeId = tribeId;
         }
 
-        public static UserRegistration Create(string userId, string profileId, string firstName, string lastName, string email, string instructorId)
-            => new UserRegistration(userId, profileId, firstName, lastName, email, instructorId);
+        public static UserRegistration Create(string userId, string profileId, string firstName, string lastName, string email, string instructorId, string tribeId)
+            => new UserRegistration(userId, profileId, firstName, lastName, email, instructorId, tribeId);
     }
 }

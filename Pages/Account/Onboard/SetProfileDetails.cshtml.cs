@@ -66,7 +66,7 @@ namespace HAS.Registration
             else
             {
                 Instructor = await GetInstructorDetails(userRegDetails.UserId);
-                
+
                 updateUserDetails.IsInstructor = true;
 
                 if (Instructor != null)
@@ -120,7 +120,7 @@ namespace HAS.Registration
                 {
                     Profile updatedProfile = await _mediator.Send(Data);
 
-                    var userReg = UserRegistration.Create(updatedProfile.PersonalDetails.UserId, updatedProfile.Id, updatedProfile.PersonalDetails.FirstName, updatedProfile.PersonalDetails.LastName, updatedProfile.PersonalDetails.Email, Data.InstructorId);
+                    var userReg = UserRegistration.Create(updatedProfile.PersonalDetails.UserId, updatedProfile.Id, updatedProfile.PersonalDetails.FirstName, updatedProfile.PersonalDetails.LastName, updatedProfile.PersonalDetails.Email, Data.InstructorId, string.Empty);
 
                     TempData.Set("UserRegistration", userReg);
 
@@ -253,7 +253,13 @@ namespace HAS.Registration
 
         private async Task<InstructorProfile> GetInstructorDetails(string userId)
         {
-            var profile = await _mediator.Send(new GetAppProfileByUserIdQuery(userId));
+            Profile profile = null;
+
+            while(profile == null)
+            {
+                profile = await _mediator.Send(new GetAppProfileByUserIdQuery(userId));
+                Thread.Sleep(1000);
+            }
 
             var instructor = InstructorProfile.Create(profile.PersonalDetails.UserId, profile.Id, profile.PersonalDetails.FirstName, profile.PersonalDetails.LastName, profile.PersonalDetails.Email, profile.PersonalDetails.ScreenName, profile.AppDetails.InstructorDetails.PublicName);
 
