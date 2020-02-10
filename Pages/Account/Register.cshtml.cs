@@ -1,23 +1,21 @@
 ﻿using FluentValidation;
 using HAS.Registration.Feature.Identity;
 using HAS.Registration.Models;
-using IdentityModel.Client;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text.Json;
 using System.Threading.Tasks;
 using static HAS.Registration.Feature.Alert.ThrowAlert;
 using static HAS.Registration.Feature.GatedRegistration.GetUserInGatedRegistrationByEmailAddress;
 using static HAS.Registration.Feature.GatedRegistration.ValidateRegistration;
-using static HAS.Registration.Feature.Identity.AddUserIdentity;
-using static HAS.Registration.Feature.IdentityServer.GetAccessToken;
 using static HAS.Registration.Feature.UseCase.OnboardUser;
 using static HAS.Registration.GetAppProfileByPublicName;
 
@@ -117,7 +115,11 @@ namespace HAS.Registration.Pages.Account
             public Validator()
             {
                 RuleFor(m => m.Email).NotEmpty().EmailAddress();
-                RuleFor(m => m.Password).NotEmpty().MinimumLength(6).MaximumLength(100).WithMessage("The password must be at least 6 characters long.");
+                RuleFor(m => m.Password).NotEmpty().WithMessage("A Password must be entered");
+                RuleFor(m => m.Password).MinimumLength(6).WithMessage("The password must be at least 6 characters long.");
+                RuleFor(m => m.Password).MaximumLength(30).WithMessage("The password must not be longer than 30 characters.");
+                RuleFor(m => m.Password).Matches("^(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$")
+                    .WithMessage("The password must contain at least a symbol, a capital letter and a number.");
                 RuleFor(m => m.ConfirmPassword).NotEmpty().Equal(m => m.Password).WithMessage("The password and confirmation password do not match");
                 RuleFor(m => m.EntryCode).NotEmpty();
             }
@@ -191,7 +193,8 @@ namespace HAS.Registration.Pages.Account
                 catch (IdentityUserCreateException ex)
                 {
                     AddErrors(ex.Errors);
-                    await _mediator.Send(new ThrowAlertCommand(AlertType.DANGER, $"", ex.Errors.ToString()));
+
+                    await _mediator.Send(new ThrowAlertCommand(AlertType.DANGER, $"", ex.Errors.Select(x => x.Description).AsEnumerable()));
                 }
             }
 

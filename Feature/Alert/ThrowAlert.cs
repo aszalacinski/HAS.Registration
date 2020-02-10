@@ -23,6 +23,18 @@ namespace HAS.Registration.Feature.Alert
                 Title = title;
                 Body = body;
             }
+
+            public ThrowAlertCommand(string type, string title, IEnumerable<string> body)
+            {
+                Type = type;
+                Title = title;
+                
+                foreach(string item in body)
+                {
+                    Body += $"{item}<br />";
+                }
+
+            }
         }
 
         public class ThrowAlertCommandHandler : IRequestHandler<ThrowAlertCommand, bool>
